@@ -1,0 +1,35 @@
+{
+	"name": "bloodline",
+	"type": "module",
+	"version": "1.0.0",
+	"description": "",
+	"author": "Gilles Waeber <moi@gilleswaeber.ch>",
+	"license": "MIT",
+	"keywords": [],
+	"sideEffects": false,
+	"packageManager": "pnpm@10.32.1",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"scripts": {
+		"build": "tsc",
+		"test": "vitest",
+		"format": "prettier --write src test ./*.json"
+	},
+	"devDependencies": {
+		"@vitest/coverage-v8": "4.1.0",
+		"prettier": "^3.8.1",
+		"typescript": "^5.9.3",
+		"vitest": "^4.1.0"
+	}
+}
