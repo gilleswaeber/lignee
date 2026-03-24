@@ -2,7 +2,7 @@ import { readRecord } from "../../src";
 import { describe, expect, test } from "vitest";
 import { makeHeadRecord, makeIndiRecord } from "./testData";
 
-describe("readRecord reading", () => {
+describe("record reading", () => {
 	test("head record example", () => {
 		const r = readRecord(makeHeadRecord());
 

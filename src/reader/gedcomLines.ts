@@ -1,16 +1,12 @@
-import { LineTerminator } from "../models.js";
+import { LineTerminator } from "../models";
 import {
 	processTextLines,
 	processBinaryLines,
 	processBinaryLinesAsync,
-} from "./continuation.js";
-import {
-	readTextLines,
-	readBinaryLines,
-	readBinaryLinesAsync,
-} from "./lines.js";
-import type { GedcomLine } from "./models.js";
-import { Status } from "../status.js";
+} from "./continuation";
+import { readTextLines, readBinaryLines, readBinaryLinesAsync } from "./lines";
+import type { GedcomLine } from "./models";
+import { Status } from "../status";
 
 export function readGedcomLines(
 	data: string | Uint8Array | Iterable<Uint8Array>,

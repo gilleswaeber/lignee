@@ -1,6 +1,6 @@
-import type { BinaryLine, GedcomLine, TextLine } from "./models.js";
-import { mergeUint8Arrays } from "../utils/typeArrays.js";
-import { Status } from "../status.js";
+import type { BinaryLine, GedcomLine, TextLine } from "./models";
+import { mergeUint8Arrays } from "../utils/typeArrays";
+import { Status } from "../status";
 import type { LineLocation } from "../models";
 
 /**

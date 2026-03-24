@@ -1,7 +1,7 @@
-import type { BinaryLine, TextLine } from "./models.js";
-import { mergeUint8Arrays } from "../utils/typeArrays.js";
-import { LineTerminator } from "../models.js";
-import { enumerate } from "../utils/iterables.js";
+import type { BinaryLine, TextLine } from "./models";
+import { mergeUint8Arrays } from "../utils/typeArrays";
+import { LineTerminator } from "../models";
+import { enumerate } from "../utils/iterables";
 
 export function readBinaryLines(
 	data: Iterable<Uint8Array>,

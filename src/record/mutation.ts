@@ -145,7 +145,7 @@ export function setItem(
 	}
 }
 
-function itemPayload(
+export function itemPayload(
 	value: (ItemPayload & { [recordHandlerType]?: undefined }) | RecordItem,
 ): ItemPayload {
 	switch (value[recordHandlerType]) {

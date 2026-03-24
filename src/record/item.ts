@@ -9,7 +9,7 @@ import {
 	type RecordTag,
 } from "./interface";
 import { makeRecordAttributes } from "./attributes";
-import { setTag } from "./mutation";
+import { setItem, setTag } from "./mutation";
 import { MissingItemError } from "./errors";
 
 export function makeRecordItem(selector: ItemSelector): RecordItem {
@@ -45,6 +45,12 @@ class RecordItemValueHandler {
 		return makeRecordAttributes(this.selector);
 	}
 
+	set(
+		value: (ItemPayload & { [recordHandlerType]: undefined }) | RecordItem,
+	): void {
+		setItem(this.selector, value);
+	}
+
 	setAttr(
 		tag: string,
 		value:
@@ -72,9 +78,9 @@ class RecordItemValueHandler {
 
 	setValue(value: string): this {
 		const raw = this.raw;
-		if (!itemExists(raw))
-			throw new Error("setValue can only be called on existing items");
-		if (typeof raw == "string") {
+		if (!itemExists(raw)) {
+			setItem(this.selector, value);
+		} else if (typeof raw == "string") {
 			const parent = resolveItem({
 				record: this.selector.record,
 				path: this.selector.path.slice(0, -1),

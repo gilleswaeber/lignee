@@ -1,7 +1,7 @@
-import type { Lineage } from "../lineage.js";
-import type { GedcomRecord } from "./models.js";
-import { enumerate } from "../utils/iterables.js";
-import { extractLocation, Status } from "../status.js";
+import type { Lineage } from "../lineage";
+import type { GedcomRecord } from "./models";
+import { enumerate } from "../utils/iterables";
+import { extractLocation, Status } from "../status";
 
 export function buildLineage(
 	entries: Iterable<GedcomRecord>,

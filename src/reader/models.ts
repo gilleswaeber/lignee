@@ -1,4 +1,4 @@
-import type {Attributes, EntryLocation, LineLocation,} from "../models.js";
+import type { AttributesPayload, EntryLocation, LineLocation } from "../models";
 
 export type BinaryLine = {
 	loc: LineLocation;
@@ -17,5 +17,5 @@ export type GedcomRecord = {
 	tag: string;
 	xref?: string;
 	value?: string;
-	attr: Attributes;
+	attr: AttributesPayload;
 };

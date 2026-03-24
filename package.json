@@ -22,14 +22,14 @@
 		}
 	},
 	"scripts": {
-		"build": "tsc",
+		"build": "tsdown",
 		"test": "vitest",
 		"format": "prettier --write src test ./*.json"
 	},
 	"devDependencies": {
 		"@vitest/coverage-v8": "4.1.0",
 		"prettier": "^3.8.1",
-		"typescript": "^5.9.3",
+		"tsdown": "^0.21.4",
 		"vitest": "^4.1.0"
 	}
 }

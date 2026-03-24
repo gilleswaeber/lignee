@@ -267,4 +267,3 @@ describe("processBinaryLinesAsync", () => {
 });
 
 const UTF8_ENCODER = new TextEncoder();
-const UTF8_DECODER = new TextDecoder();

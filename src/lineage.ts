@@ -1,4 +1,4 @@
-import type { GedcomRecord } from "./reader/models.js";
+import type { GedcomRecord } from "./reader/models";
 
 export type Lineage = {
 	head: GedcomRecord | null;

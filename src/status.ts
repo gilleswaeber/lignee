@@ -1,4 +1,4 @@
-import type { Location, StatusMessage } from "./models.js";
+import type { Location, StatusMessage } from "./models";
 
 export function extractLocation({
 	line,

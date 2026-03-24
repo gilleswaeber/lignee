@@ -27,19 +27,15 @@ export type StatusMessage = {
 	message: string;
 };
 
-export type ReaderSettings = {
-	/** Set the line terminator, default is 'mixed'. */
-	ln?: LineTerminator;
-};
 export type ObjectPayload = {
 	loc?: Location;
 	value?: string;
-	attr: Attributes;
+	attr: AttributesPayload;
 	tag?: string;
 	xref?: string;
 };
 export type ItemPayload = string | ObjectPayload;
 export type TagPayload = ItemPayload | ItemPayload[];
-export type Attributes = {
+export type AttributesPayload = {
 	[key: string]: TagPayload | undefined;
 };

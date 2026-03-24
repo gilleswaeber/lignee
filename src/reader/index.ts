@@ -1,9 +1,9 @@
-import { type ReaderSettings } from "../models.js";
-import type { Lineage } from "../lineage.js";
-import { readGedcomLines } from "./gedcomLines.js";
-import { readGedcomRecords } from "./records.js";
-import { buildLineage } from "./lineage.js";
-import { Status } from "../status.js";
+import type { Lineage } from "../lineage";
+import { readGedcomLines } from "./gedcomLines";
+import { readGedcomRecords } from "./records";
+import { buildLineage } from "./lineage";
+import { Status } from "../status";
+import type { ReaderSettings } from "./settings";
 
 export function parseGedcom(
 	data: string | Uint8Array | Iterable<Uint8Array>,

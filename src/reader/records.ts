@@ -1,10 +1,10 @@
 import {
-	type Attributes,
+	type AttributesPayload,
 	type LineLocation,
 	type Location,
-} from "../models.js";
-import type { GedcomLine, GedcomRecord } from "./models.js";
-import { Status } from "../status.js";
+} from "../models";
+import type { GedcomLine, GedcomRecord } from "./models";
+import { Status } from "../status";
 
 type InnerLine = {
 	loc: Location;
@@ -78,10 +78,16 @@ export function* readGedcomRecords(
 	yield* flush();
 }
 
-function buildAttributes(inner: InnerLine[], status: Status): Attributes {
+function buildAttributes(
+	inner: InnerLine[],
+	status: Status,
+): AttributesPayload {
 	const currentLine: { [index: number]: InnerLine } = {};
 	const currentVal: {
-		[level: number]: string | undefined | { value?: string; attr: Attributes };
+		[level: number]:
+			| string
+			| undefined
+			| { value?: string; attr: AttributesPayload };
 	} = {
 		0: { attr: {} },
 	};
@@ -125,7 +131,7 @@ function buildAttributes(inner: InnerLine[], status: Status): Attributes {
 		depth = level;
 	}
 	flush(1);
-	return (currentVal[0] as { attr: Attributes }).attr;
+	return (currentVal[0] as { attr: AttributesPayload }).attr;
 }
 
 export const RootTagsWithoutRef = ["HEAD", "TRLR"];

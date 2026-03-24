@@ -1,11 +1,18 @@
-export { parseGedcom } from "./reader/index.js";
-export { dumpGedcom } from "./writer/index.js";
-export { LineTerminator } from "./models.js";
-export { readRecord } from "./record/record.js";
-
+export { parseGedcom } from "./reader";
+export { LineTerminator } from "./models";
+export type {
+	Location,
+	ObjectPayload,
+	ItemPayload,
+	TagPayload,
+	AttributesPayload,
+} from "./models";
+export { readRecord } from "./record";
 export type {
 	RecordItem,
 	RecordReaderRoot,
 	RecordTag,
 	RecordAttributes,
-} from "./record/interface";
+} from "./record";
+export { dumpGedcom, dumpGedcomEntry } from "./writer";
+export type { WriterSettings } from "./writer";

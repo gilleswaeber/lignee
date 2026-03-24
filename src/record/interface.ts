@@ -3,7 +3,7 @@ import type {
 	Location,
 	ObjectPayload,
 	TagPayload,
-} from "../models.js";
+} from "../models";
 
 export const recordHandlerType = Symbol("recordHandlerType");
 

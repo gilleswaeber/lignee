@@ -1,10 +1,21 @@
-import type {ItemSelector, TagSelector} from "./selector";
-import {RecordHandlerType, recordHandlerType, type RecordItem, type RecordTag,} from "./interface";
-import type {ItemPayload, TagPayload} from "../models";
-import {firstValue, resolveItem} from "./access";
-import {makeRecordItem} from "./item";
-import {MissingItemError} from "./errors";
-import {deleteTag, ensureArray, setItem, setTag} from "./mutation";
+import type { ItemSelector, TagSelector } from "./selector";
+import {
+	RecordHandlerType,
+	recordHandlerType,
+	type RecordItem,
+	type RecordTag,
+} from "./interface";
+import type { ItemPayload, TagPayload } from "../models";
+import { firstValue, resolveItem } from "./access";
+import { makeRecordItem } from "./item";
+import { MissingItemError } from "./errors";
+import {
+	deleteTag,
+	ensureArray,
+	itemPayload,
+	setItem,
+	setTag,
+} from "./mutation";
 
 export function makeRecordTag(selector: TagSelector): RecordTag {
 	return new Proxy(
@@ -87,6 +98,15 @@ class RecordTagHandler {
 		};
 	}
 
+	set(
+		value:
+			| (TagPayload & { [recordHandlerType]: undefined })
+			| RecordTag
+			| RecordItem,
+	): void {
+		setTag(this.selector, value);
+	}
+
 	setAt(
 		index: number,
 		value: (ItemPayload & { [recordHandlerType]: undefined }) | RecordItem,
@@ -115,9 +135,15 @@ class RecordTagHandler {
 		}
 	}
 
-	push(...payload: ItemPayload[]): void {
+	push(
+		...payload: (
+			| (ItemPayload & { [recordHandlerType]: undefined })
+			| RecordItem
+		)[]
+	): void {
 		if (!payload.length) return;
-		ensureArray(this.selector).push(...payload);
+		else if (payload.length == 1 && !this.exists) this.set(payload[0]);
+		else ensureArray(this.selector).push(...payload.map((p) => itemPayload(p)));
 	}
 
 	[Symbol.iterator](): Iterator<RecordItem> {

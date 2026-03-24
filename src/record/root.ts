@@ -1,5 +1,5 @@
-import type {GedcomRecord} from "../reader/models";
-import type {ItemPayload, Location, TagPayload,} from "../models";
+import type { GedcomRecord } from "../reader/models";
+import type { ItemPayload, Location, TagPayload } from "../models";
 import {
 	type RecordAttributes,
 	RecordHandlerType,
@@ -7,8 +7,8 @@ import {
 	type RecordItem,
 	type RecordTag,
 } from "./interface";
-import {makeRecordAttributes} from "./attributes";
-import {setRoot, setTag} from "./mutation";
+import { makeRecordAttributes } from "./attributes";
+import { setRoot, setTag } from "./mutation";
 
 export class RecordReaderRootHandler {
 	constructor(private readonly record: GedcomRecord) {}

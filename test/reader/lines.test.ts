@@ -1,8 +1,12 @@
-import {assert, describe, test} from "vitest";
-import {readBinaryLines, readBinaryLinesAsync, readTextLines,} from "../../src/reader/lines";
-import type {BinaryLine, TextLine} from "../../src/reader/models";
-import {LineTerminator} from "../../src/models";
-import {Status} from "../../src/status";
+import { assert, describe, test } from "vitest";
+import {
+	readBinaryLines,
+	readBinaryLinesAsync,
+	readTextLines,
+} from "../../src/reader/lines";
+import type { BinaryLine, TextLine } from "../../src/reader/models";
+import { LineTerminator } from "../../src";
+import { Status } from "../../src/status";
 
 const minimalGedcom = [
 	"0 HEAD", // 0-6
@@ -81,6 +85,20 @@ describe("readTextLines", () => {
 	});
 });
 
+function splitInChunks(
+	fullData: Uint8Array<ArrayBuffer>,
+	chunkSizes: number[],
+) {
+	const chunks = [];
+	let offset = 0;
+	for (const size of chunkSizes) {
+		chunks.push(fullData.subarray(offset, offset + size));
+		offset += size;
+	}
+	chunks.push(fullData.subarray(offset));
+	return chunks;
+}
+
 describe("readBinaryLines", () => {
 	test("readBinaryLines on simple input", () => {
 		const input = UTF8_ENCODER.encode(minimalGedcom.join("\n"));
@@ -151,14 +169,7 @@ describe("readBinaryLines", () => {
 
 	test("readBinaryLines with arbitrary chunks", () => {
 		const fullData = UTF8_ENCODER.encode(minimalGedcom.join("\n"));
-		const chunkSizes = [1, 2, 3, 5, 8, 13, 21, 34];
-
-		const chunks = [];
-		let offset = 0;
-		for (const size of chunkSizes) {
-			chunks.push(fullData.subarray(offset, offset + size));
-			offset += size;
-		}
+		const chunks = splitInChunks(fullData, [1, 2, 3, 5, 8, 13, 21, 34]);
 
 		const lines = Array.from(readBinaryLines(chunks, LineTerminator.MIXED)).map(
 			(line) => UTF8_DECODER.decode(line.data),
@@ -181,6 +192,28 @@ describe("readBinaryLines", () => {
 			(line) => UTF8_DECODER.decode(line.data),
 		);
 		assert.deepEqual(lines, expectedLines);
+	});
+
+	test.each([
+		{ ln: LineTerminator.MIXED, sep: "\n" },
+		{ ln: LineTerminator.LF, sep: "\n" },
+		{ ln: LineTerminator.CRLF, sep: "\r\n" },
+	])("readBinaryLines with BOM and $ln terminator", ({ ln, sep }) => {
+		const chunks = [UTF8_ENCODER.encode(`\uFEFFab${sep}cd`)];
+		const chunks2 = splitInChunks(
+			UTF8_ENCODER.encode(`\uFEFFab${sep}cd`),
+			[1, 2, 3],
+		);
+		const expected = ["ab", "cd"];
+
+		const lines = Array.from(readBinaryLines(chunks, ln)).map((line) =>
+			UTF8_DECODER.decode(line.data),
+		);
+		const lines2 = Array.from(readBinaryLines(chunks2, ln)).map((line) =>
+			UTF8_DECODER.decode(line.data),
+		);
+		assert.deepEqual(lines, expected);
+		assert.deepEqual(lines2, expected);
 	});
 
 	test.each([
@@ -275,14 +308,7 @@ describe("readBinaryLinesAsync", () => {
 
 	test("readBinaryLinesAsync with arbitrary chunks", async () => {
 		const fullData = UTF8_ENCODER.encode(minimalGedcom.join("\n"));
-		const chunkSizes = [1, 2, 3, 5, 8, 13, 21, 34];
-
-		const chunks = [];
-		let offset = 0;
-		for (const size of chunkSizes) {
-			chunks.push(fullData.subarray(offset, offset + size));
-			offset += size;
-		}
+		const chunks = splitInChunks(fullData, [1, 2, 3, 5, 8, 13, 21, 34]);
 
 		const lines = await Array.fromAsync(
 			readBinaryLinesAsync(chunks, LineTerminator.MIXED),
@@ -291,7 +317,7 @@ describe("readBinaryLinesAsync", () => {
 		assert.deepEqual(lines, minimalGedcom);
 	});
 
-	test("readBinaryLinesAsync with cut on CRLF", () => {
+	test("readBinaryLinesAsync with cut on CRLF", async () => {
 		const chunks = [
 			"AA\r",
 			"\nB\nB\r\nC\r",
@@ -302,11 +328,36 @@ describe("readBinaryLinesAsync", () => {
 		].map((part) => UTF8_ENCODER.encode(part));
 		const expectedLines = ["AA", "B\nB", "C\rC", "D\n\rDDD", "EE"];
 
-		const lines = Array.from(readBinaryLines(chunks, LineTerminator.CRLF)).map(
-			(line) => UTF8_DECODER.decode(line.data),
-		);
+		const lines = (
+			await Array.fromAsync(readBinaryLinesAsync(chunks, LineTerminator.CRLF))
+		).map((line) => UTF8_DECODER.decode(line.data));
 		assert.deepEqual(lines, expectedLines);
 	});
+
+	test.each([
+		{ ln: LineTerminator.MIXED, sep: "\n" },
+		{ ln: LineTerminator.LF, sep: "\n" },
+		{ ln: LineTerminator.CRLF, sep: "\r\n" },
+	])(
+		"readBinaryLinesAsync with BOM and $ln terminator",
+		async ({ ln, sep }) => {
+			const chunks = [UTF8_ENCODER.encode(`\uFEFFab${sep}cd`)];
+			const chunks2 = splitInChunks(
+				UTF8_ENCODER.encode(`\uFEFFab${sep}cd`),
+				[1, 2, 3],
+			);
+			const expected = ["ab", "cd"];
+
+			const lines = (
+				await Array.fromAsync(readBinaryLinesAsync(chunks, ln))
+			).map((line) => UTF8_DECODER.decode(line.data));
+			const lines2 = (
+				await Array.fromAsync(readBinaryLinesAsync(chunks2, ln))
+			).map((line) => UTF8_DECODER.decode(line.data));
+			assert.deepEqual(lines, expected);
+			assert.deepEqual(lines2, expected);
+		},
+	);
 });
 
 const UTF8_ENCODER = new TextEncoder();
