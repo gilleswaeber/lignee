@@ -1,4 +1,4 @@
-import type { ItemSelector, TagSelector } from "./selector";
+import type {ItemSelector, TagSelector} from "./selector";
 import {
 	type RecordAttributes,
 	RecordHandlerType,
@@ -6,11 +6,10 @@ import {
 	type RecordItem,
 	type RecordTag,
 } from "./interface";
-import type { TagPayload } from "../models";
-import { makeRecordTag } from "./tag";
-import { resolveItem } from "./access";
-import { MissingItemError } from "./errors";
-import { setTag } from "./mutation";
+import type {TagPayload} from "../models";
+import {makeRecordTag} from "./tag";
+import {resolveItem} from "./access";
+import {deleteTag, setTag} from "./mutation";
 
 export function makeRecordAttributes(selector: ItemSelector): RecordAttributes {
 	return new Proxy(
@@ -53,7 +52,7 @@ class RecordAttributesHandler {
 
 	get(tag: string): RecordTag {
 		return makeRecordTag({
-			record: this.selector.record,
+			ctx: this.selector.ctx,
 			path: this.selector.path,
 			tag,
 		});
@@ -70,11 +69,7 @@ class RecordAttributesHandler {
 	}
 
 	delete(tag: string): void {
-		const item = resolveItem(this.selector);
-		if (item == null) throw new MissingItemError(this.selector);
-		if (typeof item != "string") {
-			delete item.attr[tag];
-		}
+		deleteTag(this.tagSelector(tag));
 	}
 
 	[Symbol.iterator]: () => Iterator<RecordTag> = () => {
@@ -88,7 +83,7 @@ class RecordAttributesHandler {
 
 	private tagSelector(tag: string): TagSelector {
 		return {
-			record: this.selector.record,
+			ctx: this.selector.ctx,
 			path: this.selector.path,
 			tag,
 		};

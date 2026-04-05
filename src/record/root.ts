@@ -1,5 +1,4 @@
-import type { GedcomRecord } from "../reader/models";
-import type { ItemPayload, Location, TagPayload } from "../models";
+import type {ItemPayload, Location, TagPayload} from "../models";
 import {
 	type RecordAttributes,
 	RecordHandlerType,
@@ -7,22 +6,23 @@ import {
 	type RecordItem,
 	type RecordTag,
 } from "./interface";
-import { makeRecordAttributes } from "./attributes";
-import { setRoot, setTag } from "./mutation";
+import {makeRecordAttributes} from "./attributes";
+import {setRoot, setTag} from "./mutation";
+import type {SelectorContext} from "./selector";
 
 export class RecordReaderRootHandler {
-	constructor(private readonly record: GedcomRecord) {}
+	constructor(private readonly ctx: SelectorContext) {}
 
 	get location(): Location {
-		return this.record.loc ?? {};
+		return this.ctx.getRecord().loc ?? {};
 	}
 
 	get tag(): string {
-		return this.record.tag;
+		return this.ctx.getRecord().tag;
 	}
 
 	get attr(): RecordAttributes {
-		return makeRecordAttributes({ record: this.record, path: [] });
+		return makeRecordAttributes({ ctx: this.ctx, path: [] });
 	}
 
 	get index(): 0 {
@@ -30,7 +30,7 @@ export class RecordReaderRootHandler {
 	}
 
 	set(value: (ItemPayload & { [recordHandlerType]?: undefined }) | RecordItem) {
-		setRoot(this.record, value);
+		setRoot(this.ctx, value);
 	}
 
 	setAttr(
@@ -40,11 +40,14 @@ export class RecordReaderRootHandler {
 			| RecordTag
 			| RecordItem,
 	): void {
-		setTag({ record: this.record, path: [], tag }, value);
+		setTag({ ctx: this.ctx, path: [], tag }, value);
 	}
 
 	deleteAttr(tag: string): void {
-		delete this.record.attr[tag];
+		this.ctx.setRecord(r => ({
+			...r,
+			attr: Object.fromEntries(Object.entries(r.attr).filter(([k, _]) => k != tag))
+		}));
 	}
 
 	get [recordHandlerType](): RecordHandlerType.ROOT {

@@ -1,4 +1,4 @@
-export { readRecord } from "./record";
+export { editRecordInPlace, produceRecord, readRecord } from "./record";
 
 export type {
 	RecordItem,

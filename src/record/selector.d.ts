@@ -1,4 +1,10 @@
-import type { GedcomRecord } from "../reader/models.ts";
+import type {GedcomRecord} from "../reader/models.ts";
+import type {Immutable} from "../utils/immutable";
+
+export type SelectorContext = {
+	getRecord(): Immutable<GedcomRecord>;
+	setRecord(update: (r: Immutable<GedcomRecord>) => Immutable<GedcomRecord>);
+};
 
 /**
  * Selector for a single element (existing or not).
@@ -8,7 +14,7 @@ import type { GedcomRecord } from "../reader/models.ts";
  * - `[...record.NAME]` (path: `[['NAME', i]]`) for `i ∈ 0 .. record.NAME.length` all the NAME items taken separately.
  */
 export type ItemSelector = {
-	record: GedcomRecord;
+	ctx: SelectorContext;
 	path: [string, number][];
 };
 
@@ -23,7 +29,7 @@ export type ItemSelector = {
  * `record.NAME.attr.GIVN` is not a valid selector as there can be any number of root NAME items.
  */
 export type TagSelector = {
-	record: GedcomRecord;
+	ctx: SelectorContext;
 	path: [string, number][];
 	tag: string;
 };

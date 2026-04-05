@@ -4,6 +4,7 @@ import type {
 	ObjectPayload,
 	TagPayload,
 } from "../models";
+import type {Immutable} from "../utils/immutable";
 
 export const recordHandlerType = Symbol("recordHandlerType");
 
@@ -19,10 +20,10 @@ export interface RecordReaderRoot {
 	get tag(): string;
 	get attr(): RecordAttributes;
 	/** `item.attr.TAG = payload` can also be used */
-	setAttr(tag: string, value: TagPayload | RecordTag | RecordItem): void;
+	setAttr(tag: string, value: Immutable<TagPayload> | RecordTag | RecordItem): void;
 	/** `delete item.attr.TAG` can also be used */
 	deleteAttr(tag: string): void;
-	set(value: ItemPayload | RecordItem): void;
+	set(value: Immutable<ItemPayload> | RecordItem): void;
 	get index(): 0;
 	[recordHandlerType]: RecordHandlerType.ROOT;
 }
@@ -33,21 +34,20 @@ export type RecordAttributes = {
 } & Iterable<RecordTag>;
 
 export type RecordTag = (
-	| { exists: true; hasFirstValue: true; firstValue: string; raw: TagPayload }
-	| { exists: true; hasFirstValue: false; firstValue: null; raw: TagPayload }
-	| { exists: false; hasFirstValue: false; firstValue: null; raw: null }
+	| { exists: true; raw: Immutable<TagPayload> }
+	| { exists: false; raw: null }
 ) & {
 	get tag(): string;
 	get first(): RecordItem;
 	get length(): number;
-	set(payload: TagPayload): void;
+	set(payload: Immutable<TagPayload>): void;
 	delete(): void;
-	push(...payload: ItemPayload[]): void;
+	push(...payload: Immutable<ItemPayload>[]): void;
 	[index: number]: RecordItem;
 	/**
 	 * `value[i] = payload` and `value[i].set(payload)` can also be used.
 	 */
-	setAt(index: number, payload: ItemPayload | RecordItem): void;
+	setAt(index: number, payload: Immutable<ItemPayload> | RecordItem): void;
 	/**
 	 * Delete items. **THIS WILL REINDEX THE ARRAY**
 	 *
@@ -58,17 +58,17 @@ export type RecordTag = (
 } & Iterable<{ exists: true } & RecordItem>;
 
 export type RecordItem = (
-	| { exists: true; hasValue: true; value: string; raw: ItemPayload }
-	| { exists: true; hasValue: false; value: null; raw: ObjectPayload }
+	| { exists: true; hasValue: true; value: string; raw: Immutable<ItemPayload> }
+	| { exists: true; hasValue: false; value: null; raw: Immutable<ObjectPayload> }
 	| { exists: false; hasValue: false; value: null; raw: null }
 ) & {
 	get attr(): RecordAttributes;
 	/** `item.attr.TAG = payload` can also be used */
-	setAttr(tag: string, value: TagPayload | RecordTag | RecordItem): void;
+	setAttr(tag: string, value: Immutable<TagPayload> | RecordTag | RecordItem): void;
 	/** `delete item.attr.TAG` can also be used */
 	deleteAttr(tag: string): void;
 	get index(): number;
-	set(payload: ItemPayload | RecordItem): void;
+	set(payload: Immutable<ItemPayload> | RecordItem): void;
 	setValue(value: string): { hasValue: true } & RecordItem;
 	[recordHandlerType]: RecordHandlerType.ITEM;
 };

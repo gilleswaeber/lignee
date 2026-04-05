@@ -1,5 +1,5 @@
-import type { ItemSelector } from "./selector";
-import type { RecordItem, RecordTag } from "./interface";
+import type {ItemSelector} from "./selector";
+import type {RecordItem, RecordTag} from "./interface";
 
 export class MissingItemError extends Error {
 	constructor(selector: ItemSelector) {
@@ -46,5 +46,17 @@ export class AssignOnNonExistentIndex extends Error {
 		super(
 			`Assigning to ${selector.path} when the index (non-first) does not exist is not supported`,
 		);
+	}
+}
+
+export class InactiveContextError extends Error {
+	constructor() {
+		super("Attempting to access or mutate a record after the produceRecord call completed.");
+	}
+}
+
+export class ReadOnlyRecordError extends Error {
+	constructor() {
+		super("Attempting to mutate a read-only record");
 	}
 }

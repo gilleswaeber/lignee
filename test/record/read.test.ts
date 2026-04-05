@@ -1,10 +1,10 @@
-import { readRecord } from "../../src";
+import { editRecordInPlace } from "../../src";
 import { describe, expect, test } from "vitest";
 import { makeHeadRecord, makeIndiRecord } from "./testData";
 
 describe("record reading", () => {
 	test("head record example", () => {
-		const r = readRecord(makeHeadRecord());
+		const r = editRecordInPlace(makeHeadRecord());
 
 		expect(r.tag).toEqual("HEAD");
 		expect(r.index).toEqual(0);
@@ -13,8 +13,6 @@ describe("record reading", () => {
 
 		const sour = r.attr.SOUR;
 		expect(sour.exists).toBe(true);
-		expect(sour.hasFirstValue).toBe(true);
-		expect(sour.firstValue).toEqual("TestSource");
 		expect(sour.first.exists).toBe(true);
 		expect(sour.first.hasValue).toBe(true);
 		expect(sour.first.value).toEqual("TestSource");
@@ -26,17 +24,15 @@ describe("record reading", () => {
 
 		const gedc = r.attr.GEDC;
 		expect(gedc.exists).toBe(true);
-		expect(gedc.hasFirstValue).toBe(false);
-		expect(gedc.firstValue).toBeNull();
+		expect(gedc.first.hasValue).toBe(false);
+		expect(gedc.first.value).toBeNull();
 		expect(gedc.length).toBe(1);
 		expect(gedc.first.exists).toBe(true);
 		expect([...gedc.first.attr].map((a) => a.tag)).ordered.members([
 			"VERS",
 			"FORM",
 		]);
-		expect(gedc.first.attr.VERS.firstValue).toEqual("5.5.1");
 		expect(gedc.first.attr.VERS.first.value).toEqual("5.5.1");
-		expect(gedc.first.attr.FORM.firstValue).toEqual("LINEAGE-LINKED");
 		expect(gedc.first.attr.FORM.first.value).toEqual("LINEAGE-LINKED");
 		expect(gedc.raw).deep.equal({
 			attr: { VERS: "5.5.1", FORM: "LINEAGE-LINKED" },
@@ -44,12 +40,11 @@ describe("record reading", () => {
 	});
 
 	test("indi record example", () => {
-		const r = readRecord(makeIndiRecord());
+		const r = editRecordInPlace(makeIndiRecord());
 
 		expect(r.tag).toEqual("INDI");
-		expect(r.attr.NAME.firstValue).toEqual("John /SMITH/");
 		expect(r.attr.NAME.first.value).toEqual("John /SMITH/");
-		expect(r.attr.NAME.first.attr.SURN.firstValue).toEqual("SMITH");
+		expect(r.attr.NAME.first.attr.SURN.first.value).toEqual("SMITH");
 		expect(
 			[...r.attr.NAME].flatMap((n) => [...n.attr.SURN]).map((s) => s.value),
 		).toEqual(["SMITH"]);

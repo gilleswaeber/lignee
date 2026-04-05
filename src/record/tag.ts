@@ -1,21 +1,11 @@
-import type { ItemSelector, TagSelector } from "./selector";
-import {
-	RecordHandlerType,
-	recordHandlerType,
-	type RecordItem,
-	type RecordTag,
-} from "./interface";
-import type { ItemPayload, TagPayload } from "../models";
-import { firstValue, resolveItem } from "./access";
-import { makeRecordItem } from "./item";
-import { MissingItemError } from "./errors";
-import {
-	deleteTag,
-	ensureArray,
-	itemPayload,
-	setItem,
-	setTag,
-} from "./mutation";
+import type {ItemSelector, TagSelector} from "./selector";
+import {RecordHandlerType, recordHandlerType, type RecordItem, type RecordTag,} from "./interface";
+import type {ItemPayload, TagPayload} from "../models";
+import {resolveItem} from "./access";
+import {makeRecordItem} from "./item";
+import {MissingItemError} from "./errors";
+import {deleteTag, pushItems, setItem, setTag,} from "./mutation";
+import type {Immutable} from "../utils/immutable";
 
 export function makeRecordTag(selector: TagSelector): RecordTag {
 	return new Proxy(
@@ -48,7 +38,7 @@ const recordTagProxyHandler: ProxyHandler<RecordTagHandler> = {
 	},
 };
 
-function tagLength(payload: TagPayload | null): number {
+function tagLength(payload: Immutable<TagPayload> | null): number {
 	if (Array.isArray(payload)) return payload.length;
 	else if (payload != null) return 1;
 	else return 0;
@@ -57,7 +47,7 @@ function tagLength(payload: TagPayload | null): number {
 class RecordTagHandler {
 	constructor(private readonly selector: TagSelector) {}
 
-	private get raw(): TagPayload | null {
+	private get raw(): Immutable<TagPayload> | null {
 		const parent = resolveItem(this.selector);
 		if (parent == null || typeof parent == "string") return null;
 		return parent.attr[this.selector.tag] ?? null;
@@ -65,14 +55,6 @@ class RecordTagHandler {
 
 	get exists(): boolean {
 		return this.raw != null;
-	}
-
-	get hasFirstValue(): boolean {
-		return this.firstValue != null;
-	}
-
-	get firstValue(): string | null {
-		return firstValue(this.raw);
 	}
 
 	get tag(): string {
@@ -93,7 +75,7 @@ class RecordTagHandler {
 
 	private itemSelector(index: number): ItemSelector {
 		return {
-			record: this.selector.record,
+			ctx: this.selector.ctx,
 			path: [...this.selector.path, [this.selector.tag, index]],
 		};
 	}
@@ -120,7 +102,7 @@ class RecordTagHandler {
 		const invalid = index.filter((i) => i < 0 || i > length);
 		if (invalid)
 			throw new MissingItemError({
-				record: this.selector.record,
+				ctx: this.selector.ctx,
 				path: [...this.selector.path, [this.selector.tag, invalid[0]]],
 			});
 
@@ -141,9 +123,7 @@ class RecordTagHandler {
 			| RecordItem
 		)[]
 	): void {
-		if (!payload.length) return;
-		else if (payload.length == 1 && !this.exists) this.set(payload[0]);
-		else ensureArray(this.selector).push(...payload.map((p) => itemPayload(p)));
+		pushItems(this.selector, payload);
 	}
 
 	[Symbol.iterator](): Iterator<RecordItem> {
@@ -152,7 +132,7 @@ class RecordTagHandler {
 			return raw
 				.map((_, i) =>
 					makeRecordItem({
-						record: this.selector.record,
+						ctx: this.selector.ctx,
 						path: [...this.selector.path, [this.selector.tag, i]],
 					}),
 				)
@@ -160,7 +140,7 @@ class RecordTagHandler {
 		} else if (raw != null) {
 			return [
 				makeRecordItem({
-					record: this.selector.record,
+					ctx: this.selector.ctx,
 					path: [...this.selector.path, [this.selector.tag, 0]],
 				}),
 			].values();

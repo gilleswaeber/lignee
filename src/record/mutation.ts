@@ -1,72 +1,16 @@
-import type { ItemSelector, TagSelector } from "./selector";
-import type { ItemPayload, ObjectPayload, TagPayload } from "../models";
-import {
-	AssignToNonExistentError,
-	MissingItemError,
-	AssignWithMissingParentError,
-	RootUpdateError,
-	DeleteWithMissingParentError,
-	UnexpectedError,
-	AssignOnNonExistentIndex,
-} from "./errors";
-import { resolveItem } from "./access";
-import {
-	RecordHandlerType,
-	recordHandlerType,
-	type RecordItem,
-	type RecordTag,
-} from "./interface";
-import type { GedcomRecord } from "../reader/models";
-
-function parentItemSelector(selector: ItemSelector) {
-	if (!selector.path.length) throw new Error("No parent for the root selector");
-	return { record: selector.record, path: selector.path.slice(0, -1) };
-}
-
-/* Ensure the selector points to an object payload. */
-export function ensureObject(selector: ItemSelector): ObjectPayload {
-	const item = resolveItem(selector);
-	if (item == null) throw new MissingItemError(selector);
-	if (typeof item == "string") {
-		if (!selector.path.length) throw new UnexpectedError(`path.length == 0`);
-		const parent = resolveItem(parentItemSelector(selector)) as ObjectPayload;
-		const [tag, index] = selector.path.at(-1)!;
-		const attr = parent.attr[tag]!;
-		if (Array.isArray(attr)) {
-			if (index > attr.length)
-				throw new UnexpectedError(`index ${index} > ${attr.length}`);
-			if (typeof attr[index] != "string")
-				throw new UnexpectedError(`index ${index} > ${attr.length}`);
-			return (parent.attr[index] = { value: attr[index], attr: {} });
-		} else if (typeof attr == "string") {
-			if (index != 0) throw new UnexpectedError(`index ${index}`);
-			return (parent.attr[tag] = { value: attr, attr: {} });
-		} else {
-			throw new UnexpectedError(`attr ${attr}`);
-		}
-	}
-	return item;
-}
-
-/* Ensure the selector points to an array of item payloads. */
-export function ensureArray(selector: TagSelector): ItemPayload[] {
-	const parent = ensureObject(selector);
-	const attr = parent.attr[selector.tag];
-	if (Array.isArray(attr)) {
-		return attr;
-	} else if (typeof attr != "undefined") {
-		return (parent.attr[selector.tag] = [attr]);
-	} else {
-		return (parent.attr[selector.tag] = []);
-	}
-}
+import type {ItemSelector, SelectorContext, TagSelector} from "./selector";
+import type {ItemPayload, TagPayload} from "../models";
+import {AssignToNonExistentError, DeleteWithMissingParentError, RootUpdateError,} from "./errors";
+import {matchItemPayload, matchTagPayload, updateItem, updateTag} from "./access";
+import {RecordHandlerType, recordHandlerType, type RecordItem, type RecordTag,} from "./interface";
+import type {Immutable} from "../utils/immutable";
 
 function tagPayload(
 	value:
-		| (TagPayload & { [recordHandlerType]?: undefined })
+		| (Immutable<TagPayload> & { [recordHandlerType]?: undefined })
 		| RecordTag
 		| RecordItem,
-) {
+): Immutable<TagPayload> {
 	switch (value[recordHandlerType]) {
 		case RecordHandlerType.VALUE:
 		case RecordHandlerType.ITEM:
@@ -82,72 +26,105 @@ function tagPayload(
 export function setTag(
 	selector: TagSelector,
 	value:
-		| (TagPayload & { [recordHandlerType]?: undefined })
+		| (Immutable<TagPayload> & { [recordHandlerType]?: undefined })
 		| RecordTag
 		| RecordItem,
 ) {
-	ensureObject(selector).attr[selector.tag] = tagPayload(value);
+	const payload = tagPayload(value);
+	updateItem({
+		selector,
+		create: true,
+		update: parent => {
+			if (parent == null) return {attr: {[selector.tag]: payload}};
+			else if (typeof parent == "string") return {value: parent, attr: {[selector.tag]: payload}};
+			else return {...parent, attr: {...parent.attr, [selector.tag]: payload}};
+		}
+	});
 }
 
 export function deleteTag(selector: TagSelector) {
-	const parent = resolveItem(selector);
-	if (parent == null) throw new DeleteWithMissingParentError(selector);
-	if (typeof parent == "string") return;
-	delete parent.attr[selector.tag];
+	updateItem({
+		selector,
+		skipMissing: true,
+		update: parent => {
+			if (parent == null) throw new DeleteWithMissingParentError(selector);
+			if (typeof parent == "string") return parent;
+			return {
+				...parent,
+				attr: Object.fromEntries(Object.entries(parent.attr).filter(([k, _]) => k != selector.tag))
+			}
+		}
+	});
 }
 
 export function setRoot(
-	record: GedcomRecord,
+	ctx: SelectorContext,
 	value: (ItemPayload & { [recordHandlerType]?: undefined }) | RecordItem,
 ) {
 	const payload = itemPayload(value);
-	if (typeof payload == "string") {
-		record.value = payload;
-		record.attr = {};
-	} else {
-		if (payload.tag && payload.tag != record.tag) {
-			throw new RootUpdateError();
-		}
-		if (payload.xref && payload.xref != record.xref) {
-			throw new RootUpdateError();
-		}
+	ctx.setRecord(r => {
+		if (typeof payload == "string") {
+			return {...r, value: payload, attr: {}};
+		} else {
+			if (payload.tag && payload.tag != r.tag) {
+				throw new RootUpdateError();
+			}
+			if (payload.xref && payload.xref != r.xref) {
+				throw new RootUpdateError();
+			}
 
-		if (payload.value) record.value = payload.value;
-		else delete record.value;
-		record.attr = payload.attr;
-	}
+			return {
+				...r,
+				value: payload.value,
+				attr: payload.attr,
+			};
+		}
+	});
 }
 
 export function setItem(
 	selector: ItemSelector,
-	value: (ItemPayload & { [recordHandlerType]?: undefined }) | RecordItem,
-) {
-	const payload = itemPayload(value);
-	const parent = resolveItem(parentItemSelector(selector));
-	if (parent == null) throw new AssignWithMissingParentError(selector);
-	const [tag, index] = selector.path.at(-1)!;
-	const isFirst = index == 0;
-
-	if (typeof parent == "string") {
-		if (!isFirst) throw new AssignOnNonExistentIndex(selector);
-		ensureObject(parentItemSelector(selector)).attr[tag] = payload;
-	} else {
-		const tagValue = parent.attr[tag];
-		if (Array.isArray(tagValue)) {
-			if (!isFirst && index > tagValue.length)
-				throw new AssignOnNonExistentIndex(selector);
-			if (isFirst && tagValue.length == 0) parent.attr[tag] = payload;
-			else tagValue[index] = payload;
-		} else {
-			if (!isFirst) throw new AssignOnNonExistentIndex(selector);
-			parent.attr[tag] = payload;
-		}
-	}
+	value: (Immutable<ItemPayload> & { [recordHandlerType]?: undefined }) | RecordItem,
+): void {
+	updateItem({
+		selector,
+		create: true,
+		update: () => itemPayload(value),
+	});
 }
 
-export function itemPayload(
-	value: (ItemPayload & { [recordHandlerType]?: undefined }) | RecordItem,
-): ItemPayload {
+export function pushItems(
+	selector: TagSelector,
+	value: ((Immutable<ItemPayload> & { [recordHandlerType]: undefined }) | RecordItem)[]
+): void {
+	if (!value.length) return;
+	const payloads = value.map((p) => itemPayload(p));
+	updateTag({
+		selector,
+		create: true,
+		update: it => matchTagPayload<Immutable<TagPayload>>(it, {
+			missing: () => payloads.length == 1 ? payloads[0] : payloads,
+			array: arr => (arr.length == 0 && payloads.length == 1) ? payloads[0] : [...arr, ...payloads],
+			single: a0 => [a0, ...payloads],
+		})
+	});
+}
+
+export function setItemValue(selector: ItemSelector, value: string): void {
+	updateItem({
+		selector,
+		create: true,
+		update: it => matchItemPayload<Immutable<ItemPayload>>(it, {
+			missing: () => value,
+			object: obj => ({...obj, value}),
+			string: () => value,
+		})
+	});
+}
+
+function itemPayload(
+	value: (Immutable<ItemPayload> & { [recordHandlerType]?: undefined }) | RecordItem,
+): Immutable<ItemPayload> {
 	switch (value[recordHandlerType]) {
 		case RecordHandlerType.ITEM:
 			if (!value.exists) {

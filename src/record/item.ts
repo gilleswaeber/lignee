@@ -1,4 +1,4 @@
-import type { ItemSelector } from "./selector";
+import type {ItemSelector, TagSelector} from "./selector";
 import type { ItemPayload, ObjectPayload, TagPayload } from "../models";
 import { resolveItem } from "./access";
 import {
@@ -9,21 +9,22 @@ import {
 	type RecordTag,
 } from "./interface";
 import { makeRecordAttributes } from "./attributes";
-import { setItem, setTag } from "./mutation";
+import {deleteTag, setItem, setItemValue, setTag} from "./mutation";
 import { MissingItemError } from "./errors";
+import type {Immutable} from "../utils/immutable";
 
 export function makeRecordItem(selector: ItemSelector): RecordItem {
 	return new RecordItemValueHandler(selector) as any as RecordItem;
 }
 
-function itemExists(payload: ItemPayload | null): payload is ItemPayload {
+function itemExists(payload: Immutable<ItemPayload> | null): payload is ItemPayload {
 	return payload != null;
 }
 
 class RecordItemValueHandler {
 	constructor(private readonly selector: ItemSelector) {}
 
-	get raw(): ItemPayload | null {
+	get raw(): Immutable<ItemPayload> | null {
 		return resolveItem(this.selector);
 	}
 
@@ -46,7 +47,7 @@ class RecordItemValueHandler {
 	}
 
 	set(
-		value: (ItemPayload & { [recordHandlerType]: undefined }) | RecordItem,
+		value: (Immutable<ItemPayload> & { [recordHandlerType]: undefined }) | RecordItem,
 	): void {
 		setItem(this.selector, value);
 	}
@@ -54,50 +55,34 @@ class RecordItemValueHandler {
 	setAttr(
 		tag: string,
 		value:
-			| (TagPayload & { [recordHandlerType]?: undefined })
+			| (Immutable<TagPayload> & { [recordHandlerType]?: undefined })
 			| RecordTag
 			| RecordItem,
 	): void {
 		setTag(
-			{ record: this.selector.record, path: this.selector.path, tag },
+			{ ctx: this.selector.ctx, path: this.selector.path, tag },
 			value,
 		);
 	}
 
 	deleteAttr(tag: string): void {
-		const item = resolveItem(this.selector);
-		if (item == null) throw new MissingItemError(this.selector);
-		if (typeof item != "string") {
-			delete item.attr[tag];
-		}
+		deleteTag(this.tagSelector(tag));
 	}
 
 	get index(): number {
 		return this.selector.path.at(-1)![1];
 	}
 
+	private tagSelector(tag: string): TagSelector {
+		return {
+			ctx: this.selector.ctx,
+			path: this.selector.path,
+			tag,
+		};
+	}
+
 	setValue(value: string): this {
-		const raw = this.raw;
-		if (!itemExists(raw)) {
-			setItem(this.selector, value);
-		} else if (typeof raw == "string") {
-			const parent = resolveItem({
-				record: this.selector.record,
-				path: this.selector.path.slice(0, -1),
-			}) as ObjectPayload;
-			const [tag, index] = this.selector.path.at(-1) as [string, number];
-			const p = parent.attr[tag]!;
-			if (Array.isArray(p)) {
-				p[index] = value;
-			} else if (typeof p == "string") {
-				if (index != 0) throw new Error(`Unexpected index ${index}`);
-				parent.attr[tag] = value;
-			} else {
-				throw new Error(`Unexpected parent payload ${p}`);
-			}
-		} else {
-			raw.value = value;
-		}
+		setItemValue(this.selector, value);
 		return this;
 	}
 
