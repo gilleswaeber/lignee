@@ -1,8 +1,12 @@
 export { editRecordInPlace, produceRecord, readRecord } from "./record";
 
 export type {
+	RecordRoot,
+	ReadOnlyRecordRoot,
 	RecordItem,
-	RecordReaderRoot,
+	ReadOnlyRecordItem,
 	RecordTag,
+	ReadOnlyRecordTag,
 	RecordAttributes,
+	ReadOnlyRecordAttributes,
 } from "./interface";

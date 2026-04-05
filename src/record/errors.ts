@@ -31,7 +31,7 @@ export class AssignWithMissingParentError extends Error {
 
 export class AssignToNonExistentError extends Error {
 	constructor(value: RecordTag | RecordItem) {
-		super("The assigned value does not exist");
+		super(`The assigned value ${value} does not exist`);
 	}
 }
 

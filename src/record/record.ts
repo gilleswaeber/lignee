@@ -1,12 +1,12 @@
 import type { GedcomRecord } from "../reader/models";
-import { type RecordReaderRoot } from "./interface";
+import {type ReadOnlyRecordRoot, type RecordRoot} from "./interface";
 import { RecordReaderRootHandler } from "./root";
 import type {Immutable} from "../utils/immutable";
 import {InactiveContextError, ReadOnlyRecordError} from "./errors";
 import type {SelectorContext} from "./selector";
 
 /** Load a record for in-place edition */
-export function editRecordInPlace(record: GedcomRecord): RecordReaderRoot {
+export function editRecordInPlace(record: GedcomRecord): RecordRoot {
 	return new RecordReaderRootHandler({
 		getRecord: () => record,
 		setRecord: (update) => void Object.assign(record, update(record)),
@@ -14,10 +14,10 @@ export function editRecordInPlace(record: GedcomRecord): RecordReaderRoot {
 }
 
 /** Load a record in read-only mode */
-export function readRecord(record: Immutable<GedcomRecord>): RecordReaderRoot {
+export function readRecord(record: Immutable<GedcomRecord>): ReadOnlyRecordRoot {
 	return new RecordReaderRootHandler({
 		getRecord: () => record,
-		setRecord: (update) => {
+		setRecord: () => {
 			throw new ReadOnlyRecordError()
 		},
 	});
@@ -28,7 +28,7 @@ export function readRecord(record: Immutable<GedcomRecord>): RecordReaderRoot {
  *
  * Similar to immer's `produce` in its interface (currying has not been implemented yet)
  */
-export function produceRecord(record: Immutable<GedcomRecord>, recipe: (record: RecordReaderRoot) => void): Immutable<GedcomRecord> {
+export function produceRecord(record: Immutable<GedcomRecord>, recipe: (record: RecordRoot) => void): Immutable<GedcomRecord> {
 	let active = true;
 	let current = record;
 	const ctx: SelectorContext = {

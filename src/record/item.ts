@@ -1,6 +1,6 @@
 import type {ItemSelector, TagSelector} from "./selector";
-import type { ItemPayload, ObjectPayload, TagPayload } from "../models";
-import { resolveItem } from "./access";
+import type {ItemPayload, TagPayload} from "../models";
+import {resolveItem} from "./access";
 import {
 	type RecordAttributes,
 	RecordHandlerType,
@@ -8,9 +8,8 @@ import {
 	type RecordItem,
 	type RecordTag,
 } from "./interface";
-import { makeRecordAttributes } from "./attributes";
+import {makeRecordAttributes} from "./attributes";
 import {deleteTag, setItem, setItemValue, setTag} from "./mutation";
-import { MissingItemError } from "./errors";
 import type {Immutable} from "../utils/immutable";
 
 export function makeRecordItem(selector: ItemSelector): RecordItem {

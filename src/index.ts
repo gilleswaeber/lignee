@@ -9,10 +9,14 @@ export type {
 } from "./models";
 export { editRecordInPlace, produceRecord, readRecord } from "./record";
 export type {
+	RecordRoot,
+	ReadOnlyRecordRoot,
 	RecordItem,
-	RecordReaderRoot,
+	ReadOnlyRecordItem,
 	RecordTag,
+	ReadOnlyRecordTag,
 	RecordAttributes,
+	ReadOnlyRecordAttributes,
 } from "./record";
 export { dumpGedcom, dumpGedcomEntry } from "./writer";
 export type { WriterSettings } from "./writer";

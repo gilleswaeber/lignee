@@ -15,31 +15,44 @@ export enum RecordHandlerType {
 	ITEM = "ITEM",
 }
 
-export interface RecordReaderRoot {
-	get location(): Location;
-	get tag(): string;
-	get attr(): RecordAttributes;
+export interface RecordRoot {
+	readonly location: Location;
+	readonly tag: string;
+	readonly attr: RecordAttributes;
 	/** `item.attr.TAG = payload` can also be used */
 	setAttr(tag: string, value: Immutable<TagPayload> | RecordTag | RecordItem): void;
 	/** `delete item.attr.TAG` can also be used */
 	deleteAttr(tag: string): void;
 	set(value: Immutable<ItemPayload> | RecordItem): void;
-	get index(): 0;
-	[recordHandlerType]: RecordHandlerType.ROOT;
+	readonly index: 0;
+	readonly [recordHandlerType]: RecordHandlerType.ROOT;
+}
+
+export interface ReadOnlyRecordRoot {
+	readonly location: Location;
+	readonly tag: string;
+	readonly attr: ReadOnlyRecordAttributes;
+	readonly index: 0;
+	readonly [recordHandlerType]: RecordHandlerType.ROOT;
 }
 
 export type RecordAttributes = {
 	[tag: string]: RecordTag;
-	[recordHandlerType]: RecordHandlerType.ATTRIBUTES;
+	readonly [recordHandlerType]: RecordHandlerType.ATTRIBUTES;
 } & Iterable<RecordTag>;
 
+export type ReadOnlyRecordAttributes = {
+	[tag: string]: ReadOnlyRecordTag;
+	readonly [recordHandlerType]: RecordHandlerType.ATTRIBUTES;
+} & Iterable<ReadOnlyRecordTag>;
+
 export type RecordTag = (
-	| { exists: true; raw: Immutable<TagPayload> }
-	| { exists: false; raw: null }
+	| { readonly exists: true; readonly raw: Immutable<TagPayload> }
+	| { readonly exists: false; readonly raw: null }
 ) & {
-	get tag(): string;
-	get first(): RecordItem;
-	get length(): number;
+	readonly tag: string;
+	readonly first: RecordItem;
+	readonly length: number;
 	set(payload: Immutable<TagPayload>): void;
 	delete(): void;
 	push(...payload: Immutable<ItemPayload>[]): void;
@@ -54,21 +67,42 @@ export type RecordTag = (
 	 * `delete value[i]` can also be used.
 	 */
 	deleteAt(...index: number[]): void;
-	[recordHandlerType]: RecordHandlerType.VALUE;
-} & Iterable<{ exists: true } & RecordItem>;
+	readonly [recordHandlerType]: RecordHandlerType.VALUE;
+} & Iterable<{ readonly exists: true } & RecordItem>;
+
+export type ReadOnlyRecordTag = (
+	| { readonly exists: true; readonly raw: Immutable<TagPayload> }
+	| { readonly exists: false; readonly raw: null }
+	) & {
+	readonly tag: string;
+	readonly first: ReadOnlyRecordItem;
+	readonly length: number;
+	readonly [index: number]: ReadOnlyRecordItem;
+	readonly [recordHandlerType]: RecordHandlerType.VALUE;
+} & Iterable<{ readonly exists: true } & ReadOnlyRecordItem>;
 
 export type RecordItem = (
-	| { exists: true; hasValue: true; value: string; raw: Immutable<ItemPayload> }
-	| { exists: true; hasValue: false; value: null; raw: Immutable<ObjectPayload> }
-	| { exists: false; hasValue: false; value: null; raw: null }
+	| { readonly exists: true; readonly hasValue: true; readonly value: string; readonly raw: Immutable<ItemPayload> }
+	| { readonly exists: true; readonly hasValue: false; readonly value: null; readonly raw: Immutable<ObjectPayload> }
+	| { readonly exists: false; readonly hasValue: false; readonly value: null; readonly raw: null }
 ) & {
-	get attr(): RecordAttributes;
+	readonly attr: RecordAttributes;
 	/** `item.attr.TAG = payload` can also be used */
 	setAttr(tag: string, value: Immutable<TagPayload> | RecordTag | RecordItem): void;
 	/** `delete item.attr.TAG` can also be used */
 	deleteAttr(tag: string): void;
-	get index(): number;
+	readonly index: number;
 	set(payload: Immutable<ItemPayload> | RecordItem): void;
 	setValue(value: string): { hasValue: true } & RecordItem;
-	[recordHandlerType]: RecordHandlerType.ITEM;
+	readonly [recordHandlerType]: RecordHandlerType.ITEM;
+};
+
+export type ReadOnlyRecordItem = (
+	| { readonly exists: true; readonly hasValue: true; readonly value: string; readonly raw: Immutable<ItemPayload> }
+	| { readonly exists: true; readonly hasValue: false; readonly value: null; readonly raw: Immutable<ObjectPayload> }
+	| { readonly exists: false; readonly hasValue: false; readonly value: null; readonly raw: null }
+	) & {
+	readonly attr: ReadOnlyRecordAttributes;
+	readonly index: number;
+	readonly [recordHandlerType]: RecordHandlerType.ITEM;
 };

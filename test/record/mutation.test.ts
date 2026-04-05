@@ -1,7 +1,6 @@
-import { describe, expect, test } from "vitest";
-import { editRecordInPlace } from "../../src";
-import { makeIndiRecord } from "./testData";
-import {produceRecord, readRecord} from "../../src/record/record";
+import {describe, expect, test} from "vitest";
+import {editRecordInPlace, produceRecord, readRecord} from "../../src";
+import {makeIndiRecord} from "./testData";
 
 describe("in-place record mutation", () => {
 	test("set value", () => {
