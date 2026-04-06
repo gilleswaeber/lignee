@@ -1,7 +1,7 @@
-Bloodline
-=========
+Lignée
+======
 
-Bloodline is a library for parsing, editing, and writing GEDCOM files.
+Lignée is a library for parsing, editing, and writing GEDCOM files.
 It is designed to be fast, able to read files that don't totally respect the spec, and to have a nice serialized data representation.
 
 ## Features
@@ -13,7 +13,7 @@ It is designed to be fast, able to read files that don't totally respect the spe
 
 ## How to use
 ```javascript
-import {readTree, dumpTree, readRecord, produceRecord} from "bloodline";
+import {readTree, dumpTree, readRecord, produceRecord} from "lignee";
 import {readFile, writeFile} from "node:fs/promises";
 
 const fileData = await readFile("tree.ged");

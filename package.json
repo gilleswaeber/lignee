@@ -1,13 +1,13 @@
 {
-	"name": "bloodline",
+	"name": "lignee",
 	"type": "module",
 	"version": "0.1.0",
 	"description": "A library for parsing, editing, and writing GEDCOM files.",
-	"homepage": "https://github.com/gilleswaeber/bloodline",
+	"homepage": "https://github.com/gilleswaeber/lignee",
 	"author": "Gilles Waeber <moi@gilleswaeber.ch>",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/bloodline.git"
+		"url": "git+https://github.com/gilleswaeber/lignee.git"
 	},
 	"license": "MIT",
 	"keywords": [],

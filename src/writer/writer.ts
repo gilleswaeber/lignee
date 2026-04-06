@@ -127,8 +127,8 @@ const DEFAULT_HEAD_RECORD: GedcomRecord = {
 	value: "HEAD",
 	attr: {
 		CHAR: "UTF-8",
-		SOUR: "BLOODLINE_JS",
-		DEST: "BLOODLINE_JS",
+		SOUR: "LIGNEE_JS",
+		DEST: "LIGNEE_JS",
 		GEDC: {
 			attr: {
 				VERS: "5.5.1",
@@ -137,7 +137,7 @@ const DEFAULT_HEAD_RECORD: GedcomRecord = {
 		},
 		SUBM: {
 			attr: {
-				NAME: "BLOODLINE_JS",
+				NAME: "LIGNEE_JS",
 			},
 		},
 	},

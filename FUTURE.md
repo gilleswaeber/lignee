@@ -1,5 +1,5 @@
-Bloodline's What's Next
-=======================
+Lignée's What's Next
+=====================
 
 A rough plan of what might come at some point, ordered by theme.
 
