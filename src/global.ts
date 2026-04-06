@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 /**
  * TextDecoder class declaration
  *
@@ -37,4 +39,7 @@ declare class TextEncoder {
  *
  * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone)
  */
-declare function structuredClone<T>(value: T, options?: { transfer: any[] }): T;
+declare function structuredClone<T>(
+	value: T,
+	options?: { transfer: unknown[] },
+): T;

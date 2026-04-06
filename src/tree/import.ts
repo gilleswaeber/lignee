@@ -1,12 +1,12 @@
-import type { Lineage } from "../lineage";
-import type { GedcomRecord } from "./models";
+import type { TreeData } from "./model";
+import type { GedcomRecord } from "../reader/models";
 import { enumerate } from "../utils/iterables";
-import { extractLocation, Status } from "../status";
+import { Status } from "../status";
 
-export function buildLineage(
+export function treeFromRecords(
 	entries: Iterable<GedcomRecord>,
 	status: Status,
-): Lineage {
+): TreeData {
 	let head = null as GedcomRecord | null;
 	let trailer = null as GedcomRecord | null;
 	const byXref: Record<string, GedcomRecord> = {};
@@ -15,27 +15,33 @@ export function buildLineage(
 	const extraEntries: GedcomRecord[] = [];
 
 	for (const [i, entry] of enumerate(entries)) {
-		const loc = { ...extractLocation(entry), entry: i };
+		const loc = { ...entry.loc, entry: i };
 
 		if (trailer) {
-			status.warn(loc, `[buildLineage] Entries found after TRLR`);
+			status.warn(loc, `[treeFromRecords] Entries found after TRLR`);
 			break;
 		}
 
 		// Check for HEAD entry
 		if (entry.tag === "HEAD") {
 			if (head) {
-				status.warn(loc, `[buildLineage] Additional HEAD entry found`);
+				status.warn(loc, `[treeFromRecords] Additional HEAD entry found`);
 				extraEntries.push(entry);
 			} else {
 				if (i != 0) {
-					status.warn(loc, `[buildLineage] HEAD entry is not the first entry`);
+					status.warn(
+						loc,
+						`[treeFromRecords] HEAD entry is not the first entry`,
+					);
 				}
 				head = entry;
 			}
 			continue;
 		} else if (i == 0) {
-			status.warn(loc, `[buildLineage] Expected the first entry to be a HEAD`);
+			status.warn(
+				loc,
+				`[treeFromRecords] Expected the first entry to be a HEAD`,
+			);
 		}
 
 		// Check for trailer entry
@@ -46,7 +52,7 @@ export function buildLineage(
 
 		if (entry.xref) {
 			if (byXref[entry.xref]) {
-				status.warn(loc, `[buildLineage] Duplicate xref: ${entry.xref}`);
+				status.warn(loc, `[treeFromRecords] Duplicate xref: ${entry.xref}`);
 				extraEntries.push(entry);
 				continue;
 			} else {
@@ -62,7 +68,7 @@ export function buildLineage(
 	}
 
 	if (!trailer) {
-		status.warn({}, `[buildLineage] Missing TRLR entry`);
+		status.warn({}, `[treeFromRecords] Missing TRLR entry`);
 	}
 
 	return {

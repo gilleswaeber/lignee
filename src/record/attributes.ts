@@ -1,4 +1,4 @@
-import type {ItemSelector, TagSelector} from "./selector";
+import type { ItemSelector, TagSelector } from "./selector";
 import {
 	type RecordAttributes,
 	RecordHandlerType,
@@ -6,16 +6,16 @@ import {
 	type RecordItem,
 	type RecordTag,
 } from "./interface";
-import type {TagPayload} from "../models";
-import {makeRecordTag} from "./tag";
-import {resolveItem} from "./access";
-import {deleteTag, setTag} from "./mutation";
+import type { TagPayload } from "../models";
+import { makeRecordTag } from "./tag";
+import { resolveItem } from "./access";
+import { deleteTag, setTag } from "./mutation";
 
 export function makeRecordAttributes(selector: ItemSelector): RecordAttributes {
 	return new Proxy(
 		new RecordAttributesHandler(selector),
 		recordAttributesProxyHandler,
-	) as any;
+	) as unknown as RecordAttributes;
 }
 
 const recordAttributesProxyHandler: ProxyHandler<RecordAttributesHandler> = {
@@ -28,8 +28,7 @@ const recordAttributesProxyHandler: ProxyHandler<RecordAttributesHandler> = {
 		) {
 			return target.get(prop);
 		}
-		// @ts-ignore
-		return Reflect.get(...arguments);
+		return Reflect.get(target, prop);
 	},
 	set(target, prop, value) {
 		if (typeof prop == "string") {

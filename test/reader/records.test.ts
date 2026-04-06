@@ -1,5 +1,5 @@
 import { test, expect, describe } from "vitest";
-import { readGedcomRecords } from "../../src/reader/records";
+import { readGedcomRecordsFromLines } from "../../src/reader/records";
 
 import { Status } from "../../src/status";
 
@@ -33,7 +33,7 @@ describe("readGedcomRecords", () => {
 		];
 
 		const actual = Array.from(
-			readGedcomRecords(
+			readGedcomRecordsFromLines(
 				input.map((text, index) => ({ text, loc: { line: index } })),
 				status,
 			),

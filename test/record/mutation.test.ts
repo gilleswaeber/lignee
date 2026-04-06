@@ -1,6 +1,6 @@
-import {describe, expect, test} from "vitest";
-import {editRecordInPlace, produceRecord, readRecord} from "../../src";
-import {makeIndiRecord} from "./testData";
+import { describe, expect, test } from "vitest";
+import { editRecordInPlace, produceRecord, readRecord } from "../../src";
+import { makeIndiRecord } from "./testData";
 
 describe("in-place record mutation", () => {
 	test("set value", () => {
@@ -37,7 +37,7 @@ describe("in-place record mutation", () => {
 		expect(r.attr._TEST6.first.value).equal("TEST6");
 
 		// @ts-expect-error TS2322
-		r.attr._TEST7[0] = "TEST7"
+		r.attr._TEST7[0] = "TEST7";
 		expect(record.attr._TEST7).equal("TEST7");
 		expect(r.attr._TEST7.first.value).equal("TEST7");
 	});
@@ -47,7 +47,7 @@ describe("producer record mutation", () => {
 	test("set value", () => {
 		const record = makeIndiRecord();
 
-		const updated = produceRecord(record, r => {
+		const updated = produceRecord(record, (r) => {
 			r.setAttr("_TEST0", "TEST0");
 			expect(r.attr._TEST0.first.value).equal("TEST0");
 
@@ -71,7 +71,7 @@ describe("producer record mutation", () => {
 			expect(r.attr._TEST6.first.value).equal("TEST6");
 
 			// @ts-expect-error TS2322
-			r.attr._TEST7[0] = "TEST7"
+			r.attr._TEST7[0] = "TEST7";
 			expect(r.attr._TEST7.first.value).equal("TEST7");
 		});
 		const r = readRecord(updated);
@@ -100,6 +100,9 @@ describe("producer record mutation", () => {
 		expect(updated.attr._TEST7).equal("TEST7");
 		expect(r.attr._TEST7.first.value).equal("TEST7");
 
-		expect(record).deep.equal(makeIndiRecord(), "original record must remain unchanged");
+		expect(record).deep.equal(
+			makeIndiRecord(),
+			"original record must remain unchanged",
+		);
 	});
 });

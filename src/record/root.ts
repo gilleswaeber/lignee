@@ -1,4 +1,4 @@
-import type {ItemPayload, Location, TagPayload} from "../models";
+import type { ItemPayload, Location, TagPayload } from "../models";
 import {
 	type RecordAttributes,
 	RecordHandlerType,
@@ -6,9 +6,9 @@ import {
 	type RecordItem,
 	type RecordTag,
 } from "./interface";
-import {makeRecordAttributes} from "./attributes";
-import {setRoot, setTag} from "./mutation";
-import type {SelectorContext} from "./selector";
+import { makeRecordAttributes } from "./attributes";
+import { setRoot, setTag } from "./mutation";
+import type { SelectorContext } from "./selector";
 
 export class RecordReaderRootHandler {
 	constructor(private readonly ctx: SelectorContext) {}
@@ -44,9 +44,11 @@ export class RecordReaderRootHandler {
 	}
 
 	deleteAttr(tag: string): void {
-		this.ctx.setRecord(r => ({
+		this.ctx.setRecord((r) => ({
 			...r,
-			attr: Object.fromEntries(Object.entries(r.attr).filter(([k, _]) => k != tag))
+			attr: Object.fromEntries(
+				Object.entries(r.attr).filter(([k, _]) => k != tag),
+			),
 		}));
 	}
 

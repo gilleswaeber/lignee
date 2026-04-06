@@ -1,9 +1,9 @@
 import type { GedcomRecord } from "../reader/models";
-import {type ReadOnlyRecordRoot, type RecordRoot} from "./interface";
+import { type ReadOnlyRecordRoot, type RecordRoot } from "./interface";
 import { RecordReaderRootHandler } from "./root";
-import type {Immutable} from "../utils/immutable";
-import {InactiveContextError, ReadOnlyRecordError} from "./errors";
-import type {SelectorContext} from "./selector";
+import type { Immutable } from "../utils/immutable";
+import { InactiveContextError, ReadOnlyRecordError } from "./errors";
+import type { SelectorContext } from "./selector";
 
 /** Load a record for in-place edition */
 export function editRecordInPlace(record: GedcomRecord): RecordRoot {
@@ -14,11 +14,13 @@ export function editRecordInPlace(record: GedcomRecord): RecordRoot {
 }
 
 /** Load a record in read-only mode */
-export function readRecord(record: Immutable<GedcomRecord>): ReadOnlyRecordRoot {
+export function readRecord(
+	record: Immutable<GedcomRecord>,
+): ReadOnlyRecordRoot {
 	return new RecordReaderRootHandler({
 		getRecord: () => record,
 		setRecord: () => {
-			throw new ReadOnlyRecordError()
+			throw new ReadOnlyRecordError();
 		},
 	});
 }
@@ -28,7 +30,10 @@ export function readRecord(record: Immutable<GedcomRecord>): ReadOnlyRecordRoot 
  *
  * Similar to immer's `produce` in its interface (currying has not been implemented yet)
  */
-export function produceRecord(record: Immutable<GedcomRecord>, recipe: (record: RecordRoot) => void): Immutable<GedcomRecord> {
+export function produceRecord(
+	record: Immutable<GedcomRecord>,
+	recipe: (record: RecordRoot) => void,
+): Immutable<GedcomRecord> {
 	let active = true;
 	let current = record;
 	const ctx: SelectorContext = {
@@ -39,8 +44,8 @@ export function produceRecord(record: Immutable<GedcomRecord>, recipe: (record: 
 		setRecord: (update) => {
 			if (active) current = update(current);
 			else throw new InactiveContextError();
-		}
-	}
+		},
+	};
 	recipe(new RecordReaderRootHandler(ctx));
 	active = false;
 	return current;

@@ -4,7 +4,7 @@ import type {
 	ObjectPayload,
 	TagPayload,
 } from "../models";
-import type {Immutable} from "../utils/immutable";
+import type { Immutable } from "../utils/immutable";
 
 export const recordHandlerType = Symbol("recordHandlerType");
 
@@ -20,7 +20,10 @@ export interface RecordRoot {
 	readonly tag: string;
 	readonly attr: RecordAttributes;
 	/** `item.attr.TAG = payload` can also be used */
-	setAttr(tag: string, value: Immutable<TagPayload> | RecordTag | RecordItem): void;
+	setAttr(
+		tag: string,
+		value: Immutable<TagPayload> | RecordTag | RecordItem,
+	): void;
 	/** `delete item.attr.TAG` can also be used */
 	deleteAttr(tag: string): void;
 	set(value: Immutable<ItemPayload> | RecordItem): void;
@@ -73,7 +76,7 @@ export type RecordTag = (
 export type ReadOnlyRecordTag = (
 	| { readonly exists: true; readonly raw: Immutable<TagPayload> }
 	| { readonly exists: false; readonly raw: null }
-	) & {
+) & {
 	readonly tag: string;
 	readonly first: ReadOnlyRecordItem;
 	readonly length: number;
@@ -82,13 +85,31 @@ export type ReadOnlyRecordTag = (
 } & Iterable<{ readonly exists: true } & ReadOnlyRecordItem>;
 
 export type RecordItem = (
-	| { readonly exists: true; readonly hasValue: true; readonly value: string; readonly raw: Immutable<ItemPayload> }
-	| { readonly exists: true; readonly hasValue: false; readonly value: null; readonly raw: Immutable<ObjectPayload> }
-	| { readonly exists: false; readonly hasValue: false; readonly value: null; readonly raw: null }
+	| {
+			readonly exists: true;
+			readonly hasValue: true;
+			readonly value: string;
+			readonly raw: Immutable<ItemPayload>;
+	  }
+	| {
+			readonly exists: true;
+			readonly hasValue: false;
+			readonly value: null;
+			readonly raw: Immutable<ObjectPayload>;
+	  }
+	| {
+			readonly exists: false;
+			readonly hasValue: false;
+			readonly value: null;
+			readonly raw: null;
+	  }
 ) & {
 	readonly attr: RecordAttributes;
 	/** `item.attr.TAG = payload` can also be used */
-	setAttr(tag: string, value: Immutable<TagPayload> | RecordTag | RecordItem): void;
+	setAttr(
+		tag: string,
+		value: Immutable<TagPayload> | RecordTag | RecordItem,
+	): void;
 	/** `delete item.attr.TAG` can also be used */
 	deleteAttr(tag: string): void;
 	readonly index: number;
@@ -98,10 +119,25 @@ export type RecordItem = (
 };
 
 export type ReadOnlyRecordItem = (
-	| { readonly exists: true; readonly hasValue: true; readonly value: string; readonly raw: Immutable<ItemPayload> }
-	| { readonly exists: true; readonly hasValue: false; readonly value: null; readonly raw: Immutable<ObjectPayload> }
-	| { readonly exists: false; readonly hasValue: false; readonly value: null; readonly raw: null }
-	) & {
+	| {
+			readonly exists: true;
+			readonly hasValue: true;
+			readonly value: string;
+			readonly raw: Immutable<ItemPayload>;
+	  }
+	| {
+			readonly exists: true;
+			readonly hasValue: false;
+			readonly value: null;
+			readonly raw: Immutable<ObjectPayload>;
+	  }
+	| {
+			readonly exists: false;
+			readonly hasValue: false;
+			readonly value: null;
+			readonly raw: null;
+	  }
+) & {
 	readonly attr: ReadOnlyRecordAttributes;
 	readonly index: number;
 	readonly [recordHandlerType]: RecordHandlerType.ITEM;

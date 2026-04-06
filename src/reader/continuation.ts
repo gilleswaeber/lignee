@@ -121,6 +121,9 @@ function* flushBinaryBuffer(
 	}
 }
 
+/**
+ * Merge CONT and CONC lines.
+ */
 export function* processTextLines(
 	lines: Iterable<TextLine>,
 	status: Status,

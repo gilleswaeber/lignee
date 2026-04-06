@@ -1,17 +1,22 @@
-import type {ItemSelector, TagSelector} from "./selector";
-import {RecordHandlerType, recordHandlerType, type RecordItem, type RecordTag,} from "./interface";
-import type {ItemPayload, TagPayload} from "../models";
-import {resolveItem} from "./access";
-import {makeRecordItem} from "./item";
-import {MissingItemError} from "./errors";
-import {deleteTag, pushItems, setItem, setTag,} from "./mutation";
-import type {Immutable} from "../utils/immutable";
+import type { ItemSelector, TagSelector } from "./selector";
+import {
+	RecordHandlerType,
+	recordHandlerType,
+	type RecordItem,
+	type RecordTag,
+} from "./interface";
+import type { ItemPayload, TagPayload } from "../models";
+import { resolveItem } from "./access";
+import { makeRecordItem } from "./item";
+import { MissingItemError } from "./errors";
+import { deleteTag, pushItems, setItem, setTag } from "./mutation";
+import type { Immutable } from "../utils/immutable";
 
 export function makeRecordTag(selector: TagSelector): RecordTag {
 	return new Proxy(
 		new RecordTagHandler(selector),
 		recordTagProxyHandler,
-	) as any as RecordTag;
+	) as unknown as RecordTag;
 }
 
 const recordTagProxyHandler: ProxyHandler<RecordTagHandler> = {
@@ -19,8 +24,7 @@ const recordTagProxyHandler: ProxyHandler<RecordTagHandler> = {
 		if (typeof prop == "string" && /^[0-9]+$/.test(prop)) {
 			return target.at(parseInt(prop, 10));
 		}
-		// @ts-ignore
-		return Reflect.get(...arguments);
+		return Reflect.get(target, prop);
 	},
 	set(target, prop, value) {
 		if (typeof prop == "string" && /^[0-9]+$/.test(prop)) {

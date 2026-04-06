@@ -2,7 +2,7 @@ import { DefaultWriterSettings, type WriterSettings } from "./settings";
 import type { GedcomRecord } from "../reader/models";
 import { LineTerminator, type TagPayload } from "../models";
 import { RootTagsWithoutRef } from "../reader/records";
-import type { Lineage } from "../lineage";
+import type { TreeData } from "../tree/model";
 
 const LineTerminatorText: { [key in LineTerminator]: string } = {
 	[LineTerminator.CRLF]: "\r\n",
@@ -11,23 +11,23 @@ const LineTerminatorText: { [key in LineTerminator]: string } = {
 	[LineTerminator.MIXED]: "\n",
 };
 
-export function dumpGedcom(
-	lineage: Lineage,
+export function dumpTree(
+	tree: TreeData,
 	p: Partial<WriterSettings> = DefaultWriterSettings,
 ): string {
 	const s = { ...DefaultWriterSettings, ...p };
 	let data = "";
-	data += dumpGedcomEntry(lineage.head ?? DEFAULT_HEAD_RECORD, s);
-	for (const tag of lineage.tags) {
-		for (const xref of lineage.byTag[tag]) {
-			const entry = lineage.byXref[xref];
+	data += dumpGedcomEntry(tree.head ?? DEFAULT_HEAD_RECORD, s);
+	for (const tag of tree.tags) {
+		for (const xref of tree.byTag[tag]) {
+			const entry = tree.byXref[xref];
 			data += dumpGedcomEntry(entry, s);
 		}
 	}
-	for (const extraEntry of lineage.extraEntries) {
+	for (const extraEntry of tree.extraEntries) {
 		data += dumpGedcomEntry(extraEntry, s);
 	}
-	data += dumpGedcomEntry(lineage.trailer ?? DEFAULT_TRAILER_RECORD, s);
+	data += dumpGedcomEntry(tree.trailer ?? DEFAULT_TRAILER_RECORD, s);
 	return data;
 }
 

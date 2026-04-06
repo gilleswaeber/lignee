@@ -1,6 +1,6 @@
-import type {ItemSelector, TagSelector} from "./selector";
-import type {ItemPayload, TagPayload} from "../models";
-import {resolveItem} from "./access";
+import type { ItemSelector, TagSelector } from "./selector";
+import type { ItemPayload, TagPayload } from "../models";
+import { resolveItem } from "./access";
 import {
 	type RecordAttributes,
 	RecordHandlerType,
@@ -8,15 +8,17 @@ import {
 	type RecordItem,
 	type RecordTag,
 } from "./interface";
-import {makeRecordAttributes} from "./attributes";
-import {deleteTag, setItem, setItemValue, setTag} from "./mutation";
-import type {Immutable} from "../utils/immutable";
+import { makeRecordAttributes } from "./attributes";
+import { deleteTag, setItem, setItemValue, setTag } from "./mutation";
+import type { Immutable } from "../utils/immutable";
 
 export function makeRecordItem(selector: ItemSelector): RecordItem {
-	return new RecordItemValueHandler(selector) as any as RecordItem;
+	return new RecordItemValueHandler(selector) as unknown as RecordItem;
 }
 
-function itemExists(payload: Immutable<ItemPayload> | null): payload is ItemPayload {
+function itemExists(
+	payload: Immutable<ItemPayload> | null,
+): payload is ItemPayload {
 	return payload != null;
 }
 
@@ -46,7 +48,9 @@ class RecordItemValueHandler {
 	}
 
 	set(
-		value: (Immutable<ItemPayload> & { [recordHandlerType]: undefined }) | RecordItem,
+		value:
+			| (Immutable<ItemPayload> & { [recordHandlerType]: undefined })
+			| RecordItem,
 	): void {
 		setItem(this.selector, value);
 	}
@@ -58,10 +62,7 @@ class RecordItemValueHandler {
 			| RecordTag
 			| RecordItem,
 	): void {
-		setTag(
-			{ ctx: this.selector.ctx, path: this.selector.path, tag },
-			value,
-		);
+		setTag({ ctx: this.selector.ctx, path: this.selector.path, tag }, value);
 	}
 
 	deleteAttr(tag: string): void {

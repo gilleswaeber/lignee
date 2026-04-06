@@ -23,7 +23,7 @@ export function readGedcomLines(
 	}
 }
 
-export async function* readGedcomLinesAsync(
+export function readGedcomLinesAsync(
 	data: AsyncIterable<Uint8Array>,
 	lineTerminator: LineTerminator = LineTerminator.MIXED,
 	status: Status,

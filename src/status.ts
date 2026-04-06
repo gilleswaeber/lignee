@@ -6,7 +6,7 @@ export function extractLocation({
 	u16Char,
 	entry,
 }: Location): Location {
-	let loc: Location = {};
+	const loc: Location = {};
 	if (line !== undefined) loc.line = line;
 	if (byte !== undefined) loc.byte = byte;
 	if (u16Char !== undefined) loc.u16Char = u16Char;

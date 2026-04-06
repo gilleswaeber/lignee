@@ -15,48 +15,73 @@ type InnerLine = {
 	text: string;
 };
 
-export function* readGedcomRecords(
+export function* readGedcomRecordsFromLines(
 	lines: Iterable<GedcomLine>,
 	status: Status,
 ): Generator<GedcomRecord> {
-	let root: { tag: string; xref?: string; value?: string } | null = null;
-	let loc: LineLocation = {};
-	let i = 0;
-	const inner: InnerLine[] = [];
+	const b = new RecordBuffer(status);
 
-	function* flush(): Generator<GedcomRecord> {
-		if (!root) {
-			if (inner.length)
-				status.warn(
-					inner[0].loc,
-					`[readGedcomRecords] Lines before the first level 0 line: ${inner.map((l) => l.text).join(", ")}`,
+	for (const line of lines) {
+		yield* b.processLine(line);
+	}
+
+	yield* b.flush();
+}
+
+export async function* readGedcomRecordsFromLinesAsync(
+	lines: AsyncIterable<GedcomLine>,
+	status: Status,
+): AsyncGenerator<GedcomRecord> {
+	const b = new RecordBuffer(status);
+
+	for await (const line of lines) {
+		yield* b.processLine(line);
+	}
+
+	yield* b.flush();
+}
+
+class RecordBuffer {
+	constructor(private readonly status: Status) {}
+
+	public root: { tag: string; xref?: string; value?: string } | null = null;
+	public loc: LineLocation = {};
+	public i = 0;
+	public inner: InnerLine[] = [];
+
+	*flush(): Generator<GedcomRecord> {
+		if (!this.root) {
+			if (this.inner.length)
+				this.status.warn(
+					this.inner[0].loc,
+					`[RecordBuffer#flush] Lines before the first level 0 line: ${this.inner.map((l) => l.text).join(", ")}`,
 				);
-			inner.length = 0;
+			this.inner.length = 0;
 		} else {
-			const attr = buildAttributes(inner, status);
+			const attr = buildAttributes(this.inner, this.status);
 
 			const entry: GedcomRecord = {
-				loc: { ...loc, entry: i++ },
-				tag: root.tag,
+				loc: { ...this.loc, entry: this.i++ },
+				tag: this.root.tag,
 				attr,
 			};
-			if (typeof root.value != "undefined") entry.value = root.value;
-			if (typeof root.xref != "undefined") entry.xref = root.xref;
+			if (typeof this.root.value != "undefined") entry.value = this.root.value;
+			if (typeof this.root.xref != "undefined") entry.xref = this.root.xref;
 			yield entry;
 
-			root = null;
-			inner.length = 0;
+			this.root = null;
+			this.inner.length = 0;
 		}
 	}
 
-	for (const line of lines) {
+	*processLine(line: GedcomLine): Generator<GedcomRecord> {
 		const m = GedcomLinePattern.exec(line.text);
 		if (!m) {
-			status.warn(
+			this.status.warn(
 				line.loc,
 				`[readGedcomRecords] invalid gedcom line: ${line.text}`,
 			);
-			continue;
+			return;
 		}
 		const groups = m.groups as {
 			level: string;
@@ -66,16 +91,21 @@ export function* readGedcomRecords(
 		};
 		const level = parseInt(groups.level, 10);
 		if (level == 0) {
-			yield* flush();
-			root = groups;
-			loc = line.loc;
+			yield* this.flush();
+			this.root = groups;
+			this.loc = line.loc;
 		} else {
 			const { tag, xref, value } = groups;
-			inner.push({ loc: line.loc, level, tag, xref, value, text: line.text });
+			this.inner.push({
+				loc: line.loc,
+				level,
+				tag,
+				xref,
+				value,
+				text: line.text,
+			});
 		}
 	}
-
-	yield* flush();
 }
 
 function buildAttributes(
@@ -136,6 +166,5 @@ function buildAttributes(
 
 export const RootTagsWithoutRef = ["HEAD", "TRLR"];
 
-const TagPattern = /^[_A-Z][A-Z0-9_]+$/;
 const GedcomLinePattern =
 	/^(?<level>[0-9]+) +(?:(?<xref>@[^@]+@) +)?(?<tag>[A-Za-z0-9_]+)(?: +(?<value>.+))?$/;

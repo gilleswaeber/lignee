@@ -1,6 +1,9 @@
-import type { GedcomRecord } from "./reader/models";
+import type { GedcomRecord } from "../reader/models";
 
-export type Lineage = {
+/**
+ * In-memory full tree representation.
+ */
+export type TreeData = {
 	head: GedcomRecord | null;
 	trailer: GedcomRecord | null;
 	byXref: Record<string, GedcomRecord>;

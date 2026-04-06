@@ -1,5 +1,5 @@
-import type {GedcomRecord} from "../reader/models.ts";
-import type {Immutable} from "../utils/immutable";
+import type { GedcomRecord } from "../reader/models.ts";
+import type { Immutable } from "../utils/immutable";
 
 export type SelectorContext = {
 	getRecord(): Immutable<GedcomRecord>;

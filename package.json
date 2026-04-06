@@ -1,9 +1,14 @@
 {
 	"name": "bloodline",
 	"type": "module",
-	"version": "1.0.0",
-	"description": "",
+	"version": "0.1.0",
+	"description": "A library for parsing, editing, and writing GEDCOM files.",
+	"homepage": "https://github.com/gilleswaeber/bloodline",
 	"author": "Gilles Waeber <moi@gilleswaeber.ch>",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bloodline.git"
+	},
 	"license": "MIT",
 	"keywords": [],
 	"sideEffects": false,
@@ -24,12 +29,17 @@
 	"scripts": {
 		"build": "tsdown",
 		"test": "vitest",
-		"format": "prettier --write src test ./*.json"
+		"format": "prettier --write src test ./*.json",
+		"lint": "eslint src"
 	},
 	"devDependencies": {
+		"@eslint/js": "^10.0.1",
 		"@vitest/coverage-v8": "4.1.0",
+		"eslint": "^10.2.0",
+		"globals": "^17.4.0",
 		"prettier": "^3.8.1",
 		"tsdown": "^0.21.4",
+		"typescript-eslint": "^8.58.0",
 		"vitest": "^4.1.0"
 	}
 }
