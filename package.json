@@ -10,7 +10,10 @@
 		"url": "git+https://github.com/gilleswaeber/lignee.git"
 	},
 	"license": "MIT",
-	"keywords": [],
+	"keywords": [
+		"gedcom",
+		"genealogy"
+	],
 	"sideEffects": false,
 	"packageManager": "pnpm@10.32.1",
 	"main": "./dist/index.js",
