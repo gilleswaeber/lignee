@@ -1,35 +1,36 @@
-import { LineTerminator } from "../models";
 import {
-	processTextLines,
 	processBinaryLines,
 	processBinaryLinesAsync,
+	processTextLines,
 } from "./continuation";
-import { readTextLines, readBinaryLines, readBinaryLinesAsync } from "./lines";
+import { readBinaryLines, readBinaryLinesAsync, readTextLines } from "./lines";
 import type { GedcomLine } from "./models";
 import { Status } from "../status";
+import type { ReaderSettings } from "./settings";
 
 export function readGedcomLines(
 	data: string | Uint8Array | Iterable<Uint8Array>,
-	lineTerminator: LineTerminator = LineTerminator.MIXED,
+	settings: ReaderSettings,
 	status: Status,
 ): Generator<GedcomLine> {
 	if (typeof data === "string") {
-		const lines = readTextLines(data, lineTerminator);
-		return processTextLines(lines, status);
+		const lines = readTextLines(data, settings);
+		return processTextLines(lines, settings, status);
 	} else {
 		if (data instanceof Uint8Array) data = [data];
-		const lines = readBinaryLines(data, lineTerminator);
-		return processBinaryLines(lines, status);
+		const lines = readBinaryLines(data, settings);
+		return processBinaryLines(lines, settings, status);
 	}
 }
 
 export function readGedcomLinesAsync(
 	data: AsyncIterable<Uint8Array>,
-	lineTerminator: LineTerminator = LineTerminator.MIXED,
+	settings: ReaderSettings,
 	status: Status,
 ): AsyncGenerator<GedcomLine> {
 	return processBinaryLinesAsync(
-		readBinaryLinesAsync(data, lineTerminator),
+		readBinaryLinesAsync(data, settings),
+		settings,
 		status,
 	);
 }

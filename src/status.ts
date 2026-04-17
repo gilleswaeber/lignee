@@ -1,26 +1,13 @@
-import type { Location, StatusMessage } from "./models";
-
-export function extractLocation({
-	line,
-	byte,
-	u16Char,
-	entry,
-}: Location): Location {
-	const loc: Location = {};
-	if (line !== undefined) loc.line = line;
-	if (byte !== undefined) loc.byte = byte;
-	if (u16Char !== undefined) loc.u16Char = u16Char;
-	if (entry !== undefined) loc.entry = entry;
-	return loc;
-}
+import { type Location, type StatusMessage, WarningCode } from "./models";
 
 export class Status {
 	public warnings: StatusMessage[] = [];
 
-	public warn(loc: Location, message: string) {
+	public warn(loc: Location, code: WarningCode, detail?: string) {
 		this.warnings.push({
 			loc,
-			message,
+			code,
+			detail,
 		});
 	}
 }

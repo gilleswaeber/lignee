@@ -1,0 +1,13 @@
+﻿0 HEAD
+1 GEDC
+2 VERS 7.0
+1 NOTE This file is identical to xref.ged except that the individual without cross-reference has been moved to the end.
+0 @I1@ INDI
+0 @I@ INDI
+0 @1@ INDI
+0 @_@ INDI
+0 @0XFFFFFFFF@ INDI
+0 @THEXREFPRODUCTIONDOESNOTHAVEAMAXIMUMLENGTHSOTHISISATESTOFALONGCROSSREFERENCEIDENTIFIER@ INDI
+0 INDI
+1 NOTE This individual has no cross-reference identifier.
+0 TRLR

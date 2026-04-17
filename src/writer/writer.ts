@@ -1,7 +1,6 @@
 import { DefaultWriterSettings, type WriterSettings } from "./settings";
 import type { GedcomRecord } from "../reader/models";
 import { LineTerminator, type TagPayload } from "../models";
-import { RootTagsWithoutRef } from "../reader/records";
 import type { TreeData } from "../tree/model";
 
 const LineTerminatorText: { [key in LineTerminator]: string } = {
@@ -13,19 +12,20 @@ const LineTerminatorText: { [key in LineTerminator]: string } = {
 
 export function dumpTree(
 	tree: TreeData,
-	p: Partial<WriterSettings> = DefaultWriterSettings,
+	p: Partial<WriterSettings> = {},
 ): string {
 	const s = { ...DefaultWriterSettings, ...p };
 	let data = "";
+	if (s.bom) data += "\uFEFF";
 	data += dumpGedcomEntry(tree.head ?? DEFAULT_HEAD_RECORD, s);
 	for (const tag of tree.tags) {
 		for (const xref of tree.byTag[tag]) {
 			const entry = tree.byXref[xref];
 			data += dumpGedcomEntry(entry, s);
 		}
-	}
-	for (const extraEntry of tree.extraEntries) {
-		data += dumpGedcomEntry(extraEntry, s);
+		for (const extra of tree.extraRecords[tag]) {
+			data += dumpGedcomEntry(extra, s);
+		}
 	}
 	data += dumpGedcomEntry(tree.trailer ?? DEFAULT_TRAILER_RECORD, s);
 	return data;
@@ -39,15 +39,14 @@ export function dumpGedcomEntry(
 	const lf = LineTerminatorText[p.ln];
 
 	let str = "";
-	if (RootTagsWithoutRef.includes(entry.tag)) {
-		str += `0 ${entry.tag}${lf}`;
+	const tagPart = entry.xref?.length ? `${entry.xref} ${entry.tag}` : entry.tag;
+	if (entry.value?.length) {
+		str += writeValue(0, tagPart, entry.value, p);
 	} else {
-		if (typeof entry.value === "string" && entry.value.length) {
-			writeValue(0, entry.xref ?? "", `${entry.tag} ${entry.value}`, p);
-		} else str += `0 ${entry.xref ?? ""} ${entry.tag}${lf}`;
+		str += `0 ${tagPart}${lf}`;
 	}
 
-	function writeEntry(key: string, value: TagPayload, level: number) {
+	function writeEntry(key: string, value: TagPayload, level: number): void {
 		if (Array.isArray(value)) {
 			for (const val of value) {
 				writeEntry(key, val, level);
@@ -92,9 +91,10 @@ function writeValue(
 		const concStr = `${level + 1} CONC `;
 		const conc = UTF8_ENCODER.encode(concStr);
 		for (const line of lines) {
+			const afterTag = line.length ? " " + line : "";
 			const text = firstLine
-				? `${level} ${tag} ${line}`
-				: `${level + 1} CONT ${line}`;
+				? `${level} ${tag}${afterTag}`
+				: `${level + 1} CONT${afterTag}`;
 			firstLine = false;
 			let encoded = UTF8_ENCODER.encode(text);
 			let firstChunk = true;
@@ -115,7 +115,13 @@ function writeValue(
 		}
 		return str;
 	} else {
-		return `${level} ${tag} ` + lines.join(`${lf}${level + 1} CONT `) + lf;
+		return (
+			`${level} ${tag} ` +
+			lines
+				.map((l, i) => (i > 0 && l.length ? " " + l : l))
+				.join(`${lf}${level + 1} CONT`) +
+			lf
+		);
 	}
 }
 

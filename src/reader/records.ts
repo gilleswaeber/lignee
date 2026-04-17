@@ -5,6 +5,11 @@ import {
 } from "../models";
 import type { GedcomLine, GedcomRecord } from "./models";
 import { Status } from "../status";
+import {
+	InvalidGedcomLineError,
+	InvalidGedcomLineLevelError,
+	LinesBeforeTheFirstRecordError,
+} from "./errors";
 
 type InnerLine = {
 	loc: Location;
@@ -51,14 +56,9 @@ class RecordBuffer {
 
 	*flush(): Generator<GedcomRecord> {
 		if (!this.root) {
-			if (this.inner.length)
-				this.status.warn(
-					this.inner[0].loc,
-					`[RecordBuffer#flush] Lines before the first level 0 line: ${this.inner.map((l) => l.text).join(", ")}`,
-				);
-			this.inner.length = 0;
+			if (this.inner.length) throw new LinesBeforeTheFirstRecordError();
 		} else {
-			const attr = buildAttributes(this.inner, this.status);
+			const attr = buildAttributes(this.inner);
 
 			const entry: GedcomRecord = {
 				loc: { ...this.loc, entry: this.i++ },
@@ -76,13 +76,7 @@ class RecordBuffer {
 
 	*processLine(line: GedcomLine): Generator<GedcomRecord> {
 		const m = GedcomLinePattern.exec(line.text);
-		if (!m) {
-			this.status.warn(
-				line.loc,
-				`[readGedcomRecords] invalid gedcom line: ${line.text}`,
-			);
-			return;
-		}
+		if (!m) throw new InvalidGedcomLineError(line.loc);
 		const groups = m.groups as {
 			level: string;
 			tag: string;
@@ -108,10 +102,7 @@ class RecordBuffer {
 	}
 }
 
-function buildAttributes(
-	inner: InnerLine[],
-	status: Status,
-): AttributesPayload {
+function buildAttributes(inner: InnerLine[]): AttributesPayload {
 	const currentLine: { [index: number]: InnerLine } = {};
 	const currentVal: {
 		[level: number]:
@@ -149,11 +140,10 @@ function buildAttributes(
 	for (const line of inner) {
 		const level = line.level;
 		if (level < 1 || level > depth + 1) {
-			status.warn(
+			throw new InvalidGedcomLineLevelError(
 				line.loc,
-				`[buildAttributes] invalid level (expected at most ${depth + 1}): ${line.text}`,
+				`is: ${level} expected: ≤${depth + 1}`,
 			);
-			continue;
 		}
 		flush(level);
 		currentVal[level] = line.value;
@@ -164,7 +154,5 @@ function buildAttributes(
 	return (currentVal[0] as { attr: AttributesPayload }).attr;
 }
 
-export const RootTagsWithoutRef = ["HEAD", "TRLR"];
-
 const GedcomLinePattern =
-	/^(?<level>[0-9]+) +(?:(?<xref>@[^@]+@) +)?(?<tag>[A-Za-z0-9_]+)(?: +(?<value>.+))?$/;
+	/^(?<level>[0-9]+) +(?:(?<xref>@[^@]+@) +)?(?<tag>[A-Za-z0-9_]+)(?: +(?<value>.+))?$/s;

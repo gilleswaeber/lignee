@@ -2,24 +2,25 @@ import type { BinaryLine, TextLine } from "./models";
 import { mergeUint8Arrays } from "../utils/typeArrays";
 import { LineTerminator } from "../models";
 import { enumerate } from "../utils/iterables";
+import type { ReaderSettings } from "./settings";
 
 export function readBinaryLines(
 	data: Iterable<Uint8Array>,
-	lineTerminator: LineTerminator = LineTerminator.MIXED,
+	settings: ReaderSettings,
 ): Generator<BinaryLine> {
-	return RawLineGenerators[lineTerminator](data);
+	return RawLineGenerators[settings.ln](data);
 }
 
 export function readBinaryLinesAsync(
 	data: Iterable<Uint8Array> | AsyncIterable<Uint8Array>,
-	lineTerminator: LineTerminator = LineTerminator.MIXED,
+	settings: ReaderSettings,
 ): AsyncGenerator<BinaryLine> {
-	return RawLineGeneratorsAsync[lineTerminator](data);
+	return RawLineGeneratorsAsync[settings.ln](data);
 }
 
 export function* readTextLines(
 	data: string,
-	lineTerminator: LineTerminator = LineTerminator.MIXED,
+	settings: ReaderSettings,
 ): Generator<TextLine> {
 	let u16Char = 0;
 
@@ -30,7 +31,7 @@ export function* readTextLines(
 	}
 
 	for (const [i, text] of enumerate(
-		data.split(LineTerminatorRegex[lineTerminator]),
+		data.split(LineTerminatorRegex[settings.ln]),
 	)) {
 		// even is text, odd is line terminator
 		if (i % 2 === 0) {

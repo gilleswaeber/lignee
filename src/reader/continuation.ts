@@ -1,7 +1,12 @@
 import type { BinaryLine, GedcomLine, TextLine } from "./models";
 import { mergeUint8Arrays } from "../utils/typeArrays";
 import { Status } from "../status";
-import type { LineLocation } from "../models";
+import { type LineLocation, WarningCode } from "../models";
+import {
+	ContinuationWithoutPreviousContentError,
+	InvalidGedcomLineError,
+} from "./errors";
+import type { ReaderSettings } from "./settings";
 
 /**
  * Merge CONT and CONC lines, and decode the text. The bytes are decoded AFTER merging the lines since some
@@ -9,12 +14,13 @@ import type { LineLocation } from "../models";
  */
 export function* processBinaryLines(
 	lines: Iterable<BinaryLine>,
+	settings: ReaderSettings,
 	status: Status,
 ): Generator<GedcomLine> {
 	const b = new BinaryContinuationBuffer();
 
 	for (const data of lines) {
-		yield* processBinaryLine(b, status, data);
+		yield* processBinaryLine(b, settings, status, data);
 	}
 	yield* flushBinaryBuffer(b);
 }
@@ -25,18 +31,20 @@ export function* processBinaryLines(
  */
 export async function* processBinaryLinesAsync(
 	lines: Iterable<BinaryLine> | AsyncIterable<BinaryLine>,
+	settings: ReaderSettings,
 	status: Status,
 ): AsyncGenerator<GedcomLine> {
 	const b = new BinaryContinuationBuffer();
 
 	for await (const data of lines) {
-		yield* processBinaryLine(b, status, data);
+		yield* processBinaryLine(b, settings, status, data);
 	}
 	yield* flushBinaryBuffer(b);
 }
 
 function* processBinaryLine(
 	b: BinaryContinuationBuffer,
+	settings: ReaderSettings,
 	status: Status,
 	{ loc, data }: BinaryLine,
 ): Generator<GedcomLine> {
@@ -47,10 +55,9 @@ function* processBinaryLine(
 	while (pos < data.length && isDigit(data[pos])) pos++;
 	const levelEnd = pos;
 	if (levelStart == levelEnd) {
-		status.warn(
-			loc,
-			`[processBinaryLine] invalid line, no level, assuming implicit CONT: ${UTF8_DECODER.decode(data)}`,
-		);
+		if (!settings.allowImplicitContinuation)
+			throw new InvalidGedcomLineError(loc);
+		status.warn(loc, WarningCode.INVALID_LINE_IMPLICIT_CONTINUATION);
 		b.buffer.push(LF_TOKEN, data);
 		return;
 	}
@@ -59,10 +66,9 @@ function* processBinaryLine(
 	);
 	while (pos < data.length && isSpacing(data[pos])) pos++;
 	if (pos == levelEnd) {
-		status.warn(
-			loc,
-			`[processBinaryLine] invalid line, no spacing after level, assuming implicit CONT: ${UTF8_DECODER.decode(data)}`,
-		);
+		if (!settings.allowImplicitContinuation)
+			throw new InvalidGedcomLineError(loc);
+		status.warn(loc, WarningCode.INVALID_LINE_IMPLICIT_CONTINUATION);
 		b.buffer.push(LF_TOKEN, data);
 		return;
 	}
@@ -79,15 +85,12 @@ function* processBinaryLine(
 		if (level != b.bufferLevel + 1) {
 			status.warn(
 				loc,
-				`[processBinaryLine] invalid level for continuation: ${level} (expected ${b.bufferLevel + 1})`,
+				WarningCode.INVALID_LEVEL_CONTINUATION,
+				`is: ${level} expected: ${b.bufferLevel + 1}`,
 			);
 		}
 		if (!b.buffer.length) {
-			status.warn(
-				loc,
-				`[processBinaryLine] continuation without previous content`,
-			);
-			return;
+			throw new ContinuationWithoutPreviousContentError(loc);
 		}
 		if (rest[3] == CHR_C) {
 			// CONC
@@ -126,6 +129,7 @@ function* flushBinaryBuffer(
  */
 export function* processTextLines(
 	lines: Iterable<TextLine>,
+	settings: ReaderSettings,
 	status: Status,
 ): Generator<GedcomLine> {
 	const b = new TextContinuationBuffer();
@@ -134,10 +138,9 @@ export function* processTextLines(
 		if (!text.length) continue;
 		const m = LINE_REGEX.exec(text);
 		if (!m || !m.groups) {
-			status.warnings.push({
-				loc,
-				message: `[processTextLines] invalid line, assuming implicit CONT: ${text}`,
-			});
+			if (!settings.allowImplicitContinuation)
+				throw new InvalidGedcomLineError(loc);
+			status.warn(loc, WarningCode.INVALID_LINE_IMPLICIT_CONTINUATION);
 			b.buffer.push("\n", text);
 			continue;
 		}
@@ -149,15 +152,12 @@ export function* processTextLines(
 			if (level != b.bufferLevel + 1) {
 				status.warn(
 					loc,
-					`[processTextLines] invalid level for continuation: ${level} (expected ${b.bufferLevel + 1})`,
+					WarningCode.INVALID_LEVEL_CONTINUATION,
+					`is: ${level} expected: ${b.bufferLevel + 1}`,
 				);
 			}
 			if (!b.buffer.length) {
-				status.warn(
-					loc,
-					`[processTextLines] continuation without previous content`,
-				);
-				continue;
+				throw new ContinuationWithoutPreviousContentError(loc);
 			}
 			if (tag == "CONC") {
 				// CONC

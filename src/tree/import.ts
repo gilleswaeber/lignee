@@ -2,74 +2,80 @@ import type { TreeData } from "./model";
 import type { GedcomRecord } from "../reader/models";
 import { enumerate } from "../utils/iterables";
 import { Status } from "../status";
+import { WarningCode } from "../models";
+import { MissingHeaderError, MissingTrailerError } from "../reader/errors";
 
 export function treeFromRecords(
-	entries: Iterable<GedcomRecord>,
+	records: Iterable<GedcomRecord>,
 	status: Status,
 ): TreeData {
 	let head = null as GedcomRecord | null;
 	let trailer = null as GedcomRecord | null;
+	const seenTags = new Set<string>();
 	const byXref: Record<string, GedcomRecord> = {};
 	const byTag: Record<string, string[]> = {};
 	const tags: string[] = [];
-	const extraEntries: GedcomRecord[] = [];
+	const extraRecords: Record<string, GedcomRecord[]> = {};
 
-	for (const [i, entry] of enumerate(entries)) {
-		const loc = { ...entry.loc, entry: i };
+	function initializeTag(tag: string) {
+		tags.push(tag);
+		byTag[tag] = [];
+		extraRecords[tag] = [];
+		seenTags.add(tag);
+	}
+
+	for (const [i, record] of enumerate(records)) {
+		const loc = { ...record.loc, entry: i };
 
 		if (trailer) {
-			status.warn(loc, `[treeFromRecords] Entries found after TRLR`);
+			status.warn(loc, WarningCode.RECORD_AFTER_TRLR);
 			break;
 		}
 
-		// Check for HEAD entry
-		if (entry.tag === "HEAD") {
+		// Check for HEAD record
+		if (record.tag === "HEAD") {
 			if (head) {
-				status.warn(loc, `[treeFromRecords] Additional HEAD entry found`);
-				extraEntries.push(entry);
+				status.warn(loc, WarningCode.EXTRA_HEAD_RECORD);
+				if (!seenTags.has(record.tag)) initializeTag(record.tag);
+				extraRecords[record.tag].push(record);
 			} else {
-				if (i != 0) {
-					status.warn(
-						loc,
-						`[treeFromRecords] HEAD entry is not the first entry`,
-					);
-				}
-				head = entry;
+				head = record;
 			}
 			continue;
 		} else if (i == 0) {
-			status.warn(
-				loc,
-				`[treeFromRecords] Expected the first entry to be a HEAD`,
-			);
+			throw new MissingHeaderError();
 		}
 
-		// Check for trailer entry
-		if (entry.tag === "TRLR") {
-			trailer = entry;
+		// Check for trailer record
+		if (record.tag === "TRLR") {
+			trailer = record;
 			continue;
 		}
 
-		if (entry.xref) {
-			if (byXref[entry.xref]) {
-				status.warn(loc, `[treeFromRecords] Duplicate xref: ${entry.xref}`);
-				extraEntries.push(entry);
+		if (!seenTags.has(record.tag)) initializeTag(record.tag);
+
+		if (record.xref) {
+			if (byXref[record.xref]) {
+				status.warn(loc, WarningCode.DUPLICATE_XREF, record.xref);
+				extraRecords[record.tag].push(record);
 				continue;
 			} else {
-				byXref[entry.xref] = entry;
+				byXref[record.xref] = record;
 			}
 
-			if (!byTag[entry.tag]) {
-				byTag[entry.tag] = [];
-				tags.push(entry.tag);
+			if (!seenTags.has(record.tag)) {
+				byTag[record.tag] = [];
+				seenTags.add(record.tag);
+				tags.push(record.tag);
 			}
-			byTag[entry.tag].push(entry.xref);
+			byTag[record.tag].push(record.xref);
+		} else {
+			extraRecords[record.tag].push(record);
 		}
 	}
 
-	if (!trailer) {
-		status.warn({}, `[treeFromRecords] Missing TRLR entry`);
-	}
+	if (!head) throw new MissingHeaderError();
+	if (!trailer) throw new MissingTrailerError();
 
 	return {
 		head,
@@ -77,6 +83,6 @@ export function treeFromRecords(
 		byXref,
 		byTag,
 		tags,
-		extraEntries,
+		extraRecords,
 	};
 }

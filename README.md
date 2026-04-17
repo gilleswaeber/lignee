@@ -7,15 +7,15 @@ It is designed to be fast, able to read files that don't totally respect the spe
 ## Features
 - version independent parsing: supports GEDCOM 5.5 and 7.0+ files
 - parsing from text, binary, (async-)iterable binary streams
+  - UTF-8 encoding required in binary mode
 - immutable objects used for records
 - typed interface to traverse and mutate records
 - no dependency on node or the browser, so both are supported
-- supports UTF-8 encoding
 - can parse many ill-written files
-  - broken codepoints (UTF-8 sequences split with CONC)
+  - broken codepoints (in binary mode, UTF-8 sequences split with CONC)
   - usage of LF line breaks inside records for file with CRLF separators
-  - usage of line breaks inside records
-  - reuse of cross-references
+  - usage of line breaks inside records (only when enabled in the reader settings)
+  - reuse of cross-references (extra records are stored separately)
 
 ## How to use
 ```javascript

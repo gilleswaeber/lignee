@@ -1,4 +1,4 @@
-import { test, expect, describe } from "vitest";
+import { describe, expect, test } from "vitest";
 import {
 	processBinaryLines,
 	processBinaryLinesAsync,
@@ -7,6 +7,12 @@ import {
 import { mergeUint8Arrays } from "../../src/utils/typeArrays";
 import type { BinaryLine } from "../../src/reader/models";
 import { Status } from "../../src/status";
+import { WarningCode } from "../../src/models";
+import { DefaultReaderSettings } from "../../src/reader/settings";
+import {
+	ContinuationWithoutPreviousContentError,
+	InvalidGedcomLineError,
+} from "../../src/reader/errors";
 
 describe("processTextLines", () => {
 	test("processTextLines with continuations", () => {
@@ -31,6 +37,7 @@ describe("processTextLines", () => {
 		const lines = Array.from(
 			processTextLines(
 				input.map((text) => ({ loc: {}, text })),
+				DefaultReaderSettings,
 				status,
 			),
 		);
@@ -55,14 +62,19 @@ describe("processTextLines", () => {
 		const lines = Array.from(
 			processTextLines(
 				input.map((text, line) => ({ loc: { line }, text })),
+				DefaultReaderSettings,
 				status,
 			),
 		).map((line) => line.text);
 		expect(lines).toEqual([expected]);
 		expect(status.warnings).toHaveLength(2);
-		expect(status.warnings[0].message).toContain("invalid level");
+		expect(status.warnings[0].code).toBe(
+			WarningCode.INVALID_LEVEL_CONTINUATION,
+		);
 		expect(status.warnings[0].loc.line).toBe(1);
-		expect(status.warnings[1].message).toContain("invalid level");
+		expect(status.warnings[1].code).toBe(
+			WarningCode.INVALID_LEVEL_CONTINUATION,
+		);
 		expect(status.warnings[1].loc.line).toBe(2);
 	});
 
@@ -74,31 +86,30 @@ describe("processTextLines", () => {
 			inputs: ["0 CONT no previous content.", "0 CONC no previous content."],
 		},
 	])("processTextLines without previous content for $name", ({ inputs }) => {
-		const status = new Status();
-		const lines = Array.from(
-			processTextLines(
-				inputs.map((text, line) => ({ loc: { line }, text })),
-				status,
+		expect(() =>
+			Array.from(
+				processTextLines(
+					inputs.map((text, line) => ({ loc: { line }, text })),
+					DefaultReaderSettings,
+					new Status(),
+				),
 			),
-		);
-		expect(lines).toHaveLength(0);
-		expect(status.warnings).toHaveLength(inputs.length);
-		expect(status.warnings[0].message).toContain("without previous content");
-		expect(status.warnings[0].loc.line).toBe(0);
+		).toThrowError(ContinuationWithoutPreviousContentError);
 	});
 
 	test.each(["Invalid line", "0", "1TAG"])(
 		"processTextLines with invalid line %s",
 		(line) => {
 			const status = new Status();
-			const lines = Array.from(
-				processTextLines([{ loc: { line: 0 }, text: line }], status),
-			);
-			expect(lines).toHaveLength(1);
-			expect(lines[0].text).toEqual("\n" + line);
-			expect(status.warnings).toHaveLength(1);
-			expect(status.warnings[0].message).toContain("invalid line");
-			expect(status.warnings[0].loc.line).toBe(0);
+			expect(() =>
+				Array.from(
+					processTextLines(
+						[{ loc: { line: 0 }, text: line }],
+						DefaultReaderSettings,
+						status,
+					),
+				),
+			).toThrowError(InvalidGedcomLineError);
 		},
 	);
 });
@@ -129,6 +140,7 @@ describe("processBinaryLines", () => {
 					loc: { line },
 					data: UTF8_ENCODER.encode(text),
 				})),
+				DefaultReaderSettings,
 				status,
 			),
 		);
@@ -156,14 +168,19 @@ describe("processBinaryLines", () => {
 					loc: { line },
 					data: UTF8_ENCODER.encode(text),
 				})),
+				DefaultReaderSettings,
 				status,
 			),
 		).map((line) => line.text);
 		expect(lines).toEqual([expected]);
 		expect(status.warnings).toHaveLength(2);
-		expect(status.warnings[0].message).toContain("invalid level");
+		expect(status.warnings[0].code).toEqual(
+			WarningCode.INVALID_LEVEL_CONTINUATION,
+		);
 		expect(status.warnings[0].loc.line).toBe(1);
-		expect(status.warnings[1].message).toContain("invalid level");
+		expect(status.warnings[1].code).toEqual(
+			WarningCode.INVALID_LEVEL_CONTINUATION,
+		);
 		expect(status.warnings[1].loc.line).toBe(2);
 	});
 
@@ -175,37 +192,32 @@ describe("processBinaryLines", () => {
 			inputs: ["0 CONT no previous content.", "0 CONC no previous content."],
 		},
 	])("processBinaryLines without previous content for $name", ({ inputs }) => {
-		const status = new Status();
-		const lines = Array.from(
-			processBinaryLines(
-				inputs.map((text, line) => ({
-					loc: { line },
-					data: UTF8_ENCODER.encode(text),
-				})),
-				status,
+		expect(() =>
+			Array.from(
+				processBinaryLines(
+					inputs.map((text, line) => ({
+						loc: { line },
+						data: UTF8_ENCODER.encode(text),
+					})),
+					DefaultReaderSettings,
+					new Status(),
+				),
 			),
-		);
-		expect(lines).toHaveLength(0);
-		expect(status.warnings).toHaveLength(inputs.length);
-		expect(status.warnings[0].message).toContain("without previous content");
-		expect(status.warnings[0].loc.line).toBe(0);
+		).toThrowError(ContinuationWithoutPreviousContentError);
 	});
 
 	test.each(["Invalid line", "0", "1TAG"])(
 		"processBinaryLines with invalid line %s",
 		(line) => {
-			const status = new Status();
-			const lines = Array.from(
-				processBinaryLines(
-					[{ loc: { line: 0 }, data: UTF8_ENCODER.encode(line) }],
-					status,
+			expect(() =>
+				Array.from(
+					processBinaryLines(
+						[{ loc: { line: 0 }, data: UTF8_ENCODER.encode(line) }],
+						DefaultReaderSettings,
+						new Status(),
+					),
 				),
-			);
-			expect(lines).toHaveLength(1);
-			expect(lines[0].text).toEqual("\n" + line);
-			expect(status.warnings).toHaveLength(1);
-			expect(status.warnings[0].message).toContain("invalid line");
-			expect(status.warnings[0].loc.line).toBe(0);
+			).toThrowError(InvalidGedcomLineError);
 		},
 	);
 
@@ -225,9 +237,9 @@ describe("processBinaryLines", () => {
 		}
 		const expected = ["0 NOTE A note " + source];
 
-		const lines = Array.from(processBinaryLines(input, status)).map(
-			(line) => line.text,
-		);
+		const lines = Array.from(
+			processBinaryLines(input, DefaultReaderSettings, status),
+		).map((line) => line.text);
 		expect(lines).toEqual(expected);
 		expect(status.warnings).toHaveLength(0);
 	});
@@ -258,7 +270,7 @@ describe("processBinaryLinesAsync", () => {
 			}));
 		})();
 		const lines = await Array.fromAsync(
-			processBinaryLinesAsync(asyncInput, status),
+			processBinaryLinesAsync(asyncInput, DefaultReaderSettings, status),
 		);
 		const texts = lines.map((line) => line.text);
 		expect(texts).toEqual(expected);

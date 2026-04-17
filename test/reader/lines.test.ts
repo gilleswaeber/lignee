@@ -5,8 +5,9 @@ import {
 	readTextLines,
 } from "../../src/reader/lines";
 import type { BinaryLine, TextLine } from "../../src/reader/models";
-import { LineTerminator } from "../../src";
+import { LineTerminator, type ReaderSettings } from "../../src";
 import { Status } from "../../src/status";
+import { DefaultReaderSettings } from "../../src/reader/settings";
 
 const minimalGedcom = [
 	"0 HEAD", // 0-6
@@ -16,6 +17,10 @@ const minimalGedcom = [
 	"2 FORM LINEAGE-LINKED", // 45-66
 	"0 TRLR", // 67-73
 ];
+
+function withLn(ln: LineTerminator): ReaderSettings {
+	return { ...DefaultReaderSettings, ln };
+}
 
 describe("readTextLines", () => {
 	test("readTextLines on simple input", () => {
@@ -31,7 +36,9 @@ describe("readTextLines", () => {
 			{ loc: { u16Char: 67, line: 5 }, text: "0 TRLR" },
 		];
 
-		const lines = Array.from(readTextLines(input, LineTerminator.MIXED));
+		const lines = Array.from(
+			readTextLines(input, withLn(LineTerminator.MIXED)),
+		);
 
 		assert.deepEqual(lines, expectedLines);
 		assert.deepEqual(status.warnings, []);
@@ -47,7 +54,7 @@ describe("readTextLines", () => {
 
 		for (const [terminator, input] of Object.entries(inputs)) {
 			const lines = Array.from(
-				readTextLines(input, terminator as LineTerminator),
+				readTextLines(input, withLn(terminator as LineTerminator)),
 			).map((line) => line.text);
 			assert.deepEqual(
 				lines,
@@ -60,9 +67,10 @@ describe("readTextLines", () => {
 	test("readTextLines with CRLF endings", () => {
 		const input = `AA\r\nB\nB\r\nC\rC\r\nD\n\rD`;
 		const expectedLines = ["AA", "B\nB", "C\rC", "D\n\rD"];
-		const lines = Array.from(readTextLines(input, LineTerminator.CRLF)).map(
-			(line) => line.text,
-		);
+		// @ts-ignore
+		const lines = Array.from(
+			readTextLines(input, withLn(LineTerminator.CRLF)),
+		).map((line) => line.text);
 		assert.deepEqual(lines, expectedLines);
 	});
 
@@ -70,15 +78,17 @@ describe("readTextLines", () => {
 		const input = minimalGedcom
 			.map((line) => "".repeat(parseInt(line[0]) * 2) + line)
 			.join("\n");
-		const lines = Array.from(readTextLines(input, LineTerminator.MIXED)).map(
-			(line) => line.text,
-		);
+		const lines = Array.from(
+			readTextLines(input, withLn(LineTerminator.MIXED)),
+		).map((line) => line.text);
 		assert.deepEqual(lines, minimalGedcom);
 	});
 
 	test("readTextLines with BOM", () => {
 		const input = "\uFEFF" + minimalGedcom.join("\n");
-		const textLines = Array.from(readTextLines(input, LineTerminator.MIXED));
+		const textLines = Array.from(
+			readTextLines(input, withLn(LineTerminator.MIXED)),
+		);
 		const lines = textLines.map((line) => line.text);
 		assert.deepEqual(lines, minimalGedcom);
 		assert.equal(textLines[0].loc.u16Char, 1);
@@ -119,7 +129,9 @@ describe("readBinaryLines", () => {
 			{ loc: { byte: 67, line: 5 }, data: UTF8_ENCODER.encode("0 TRLR") },
 		];
 
-		const lines = Array.from(readBinaryLines([input], LineTerminator.MIXED));
+		const lines = Array.from(
+			readBinaryLines([input], withLn(LineTerminator.MIXED)),
+		);
 
 		assert.deepEqual(lines, expectedLines);
 		assert.deepEqual(status.warnings, []);
@@ -137,7 +149,7 @@ describe("readBinaryLines", () => {
 
 		for (const [terminator, input] of Object.entries(inputs)) {
 			const lines = Array.from(
-				readBinaryLines([input], terminator as LineTerminator),
+				readBinaryLines([input], withLn(terminator as LineTerminator)),
 			).map((line) => UTF8_DECODER.decode(line.data));
 			assert.deepEqual(
 				lines,
@@ -150,9 +162,9 @@ describe("readBinaryLines", () => {
 	test("readBinaryLines with CRLF endings", () => {
 		const input = UTF8_ENCODER.encode(`AA\r\nB\nB\r\nC\rC\r\nD\n\rD`);
 		const expectedLines = ["AA", "B\nB", "C\rC", "D\n\rD"];
-		const lines = Array.from(readBinaryLines([input], LineTerminator.CRLF)).map(
-			(line) => UTF8_DECODER.decode(line.data),
-		);
+		const lines = Array.from(
+			readBinaryLines([input], withLn(LineTerminator.CRLF)),
+		).map((line) => UTF8_DECODER.decode(line.data));
 		assert.deepEqual(lines, expectedLines);
 	});
 
@@ -161,9 +173,9 @@ describe("readBinaryLines", () => {
 			UTF8_ENCODER.encode(line + "\n"),
 		);
 
-		const lines = Array.from(readBinaryLines(chunks, LineTerminator.MIXED)).map(
-			(line) => UTF8_DECODER.decode(line.data),
-		);
+		const lines = Array.from(
+			readBinaryLines(chunks, withLn(LineTerminator.MIXED)),
+		).map((line) => UTF8_DECODER.decode(line.data));
 		assert.deepEqual(lines, minimalGedcom);
 	});
 
@@ -171,9 +183,9 @@ describe("readBinaryLines", () => {
 		const fullData = UTF8_ENCODER.encode(minimalGedcom.join("\n"));
 		const chunks = splitInChunks(fullData, [1, 2, 3, 5, 8, 13, 21, 34]);
 
-		const lines = Array.from(readBinaryLines(chunks, LineTerminator.MIXED)).map(
-			(line) => UTF8_DECODER.decode(line.data),
-		);
+		const lines = Array.from(
+			readBinaryLines(chunks, withLn(LineTerminator.MIXED)),
+		).map((line) => UTF8_DECODER.decode(line.data));
 		assert.deepEqual(lines, minimalGedcom);
 	});
 
@@ -188,9 +200,9 @@ describe("readBinaryLines", () => {
 		].map((part) => UTF8_ENCODER.encode(part));
 		const expectedLines = ["AA", "B\nB", "C\rC", "D\n\rDDD", "EE"];
 
-		const lines = Array.from(readBinaryLines(chunks, LineTerminator.CRLF)).map(
-			(line) => UTF8_DECODER.decode(line.data),
-		);
+		const lines = Array.from(
+			readBinaryLines(chunks, withLn(LineTerminator.CRLF)),
+		).map((line) => UTF8_DECODER.decode(line.data));
 		assert.deepEqual(lines, expectedLines);
 	});
 
@@ -206,11 +218,11 @@ describe("readBinaryLines", () => {
 		);
 		const expected = ["ab", "cd"];
 
-		const lines = Array.from(readBinaryLines(chunks, ln)).map((line) =>
+		const lines = Array.from(readBinaryLines(chunks, withLn(ln))).map((line) =>
 			UTF8_DECODER.decode(line.data),
 		);
-		const lines2 = Array.from(readBinaryLines(chunks2, ln)).map((line) =>
-			UTF8_DECODER.decode(line.data),
+		const lines2 = Array.from(readBinaryLines(chunks2, withLn(ln))).map(
+			(line) => UTF8_DECODER.decode(line.data),
 		);
 		assert.deepEqual(lines, expected);
 		assert.deepEqual(lines2, expected);
@@ -226,7 +238,7 @@ describe("readBinaryLines", () => {
 				.map((line) => "".repeat(parseInt(line[0]) * 2) + line)
 				.join(sep),
 		);
-		const lines = Array.from(readBinaryLines([input], ln)).map((line) =>
+		const lines = Array.from(readBinaryLines([input], withLn(ln))).map((line) =>
 			UTF8_DECODER.decode(line.data),
 		);
 		assert.deepEqual(lines, minimalGedcom);
@@ -254,7 +266,7 @@ describe("readBinaryLinesAsync", () => {
 		];
 
 		const lines = await Array.fromAsync(
-			readBinaryLinesAsync([input], LineTerminator.MIXED),
+			readBinaryLinesAsync([input], withLn(LineTerminator.MIXED)),
 		);
 
 		assert.deepEqual(lines, expectedLines);
@@ -273,7 +285,7 @@ describe("readBinaryLinesAsync", () => {
 
 		for (const [terminator, input] of Object.entries(inputs)) {
 			const lines = await Array.fromAsync(
-				readBinaryLinesAsync([input], terminator as LineTerminator),
+				readBinaryLinesAsync([input], withLn(terminator as LineTerminator)),
 				(line) => UTF8_DECODER.decode(line.data),
 			);
 			assert.deepEqual(
@@ -288,7 +300,7 @@ describe("readBinaryLinesAsync", () => {
 		const input = UTF8_ENCODER.encode(`AA\r\nB\nB\r\nC\rC\r\nD\n\rD`);
 		const expectedLines = ["AA", "B\nB", "C\rC", "D\n\rD"];
 		const lines = await Array.fromAsync(
-			readBinaryLinesAsync([input], LineTerminator.CRLF),
+			readBinaryLinesAsync([input], withLn(LineTerminator.CRLF)),
 			(line) => UTF8_DECODER.decode(line.data),
 		);
 		assert.deepEqual(lines, expectedLines);
@@ -300,7 +312,7 @@ describe("readBinaryLinesAsync", () => {
 		);
 
 		const lines = await Array.fromAsync(
-			readBinaryLinesAsync(chunks, LineTerminator.MIXED),
+			readBinaryLinesAsync(chunks, withLn(LineTerminator.MIXED)),
 			(line) => UTF8_DECODER.decode(line.data),
 		);
 		assert.deepEqual(lines, minimalGedcom);
@@ -311,7 +323,7 @@ describe("readBinaryLinesAsync", () => {
 		const chunks = splitInChunks(fullData, [1, 2, 3, 5, 8, 13, 21, 34]);
 
 		const lines = await Array.fromAsync(
-			readBinaryLinesAsync(chunks, LineTerminator.MIXED),
+			readBinaryLinesAsync(chunks, withLn(LineTerminator.MIXED)),
 			(line) => UTF8_DECODER.decode(line.data),
 		);
 		assert.deepEqual(lines, minimalGedcom);
@@ -329,7 +341,9 @@ describe("readBinaryLinesAsync", () => {
 		const expectedLines = ["AA", "B\nB", "C\rC", "D\n\rDDD", "EE"];
 
 		const lines = (
-			await Array.fromAsync(readBinaryLinesAsync(chunks, LineTerminator.CRLF))
+			await Array.fromAsync(
+				readBinaryLinesAsync(chunks, withLn(LineTerminator.CRLF)),
+			)
 		).map((line) => UTF8_DECODER.decode(line.data));
 		assert.deepEqual(lines, expectedLines);
 	});
@@ -349,10 +363,10 @@ describe("readBinaryLinesAsync", () => {
 			const expected = ["ab", "cd"];
 
 			const lines = (
-				await Array.fromAsync(readBinaryLinesAsync(chunks, ln))
+				await Array.fromAsync(readBinaryLinesAsync(chunks, withLn(ln)))
 			).map((line) => UTF8_DECODER.decode(line.data));
 			const lines2 = (
-				await Array.fromAsync(readBinaryLinesAsync(chunks2, ln))
+				await Array.fromAsync(readBinaryLinesAsync(chunks2, withLn(ln)))
 			).map((line) => UTF8_DECODER.decode(line.data));
 			assert.deepEqual(lines, expected);
 			assert.deepEqual(lines2, expected);
