@@ -16,17 +16,17 @@
 	],
 	"sideEffects": false,
 	"packageManager": "pnpm@10.32.1",
-	"main": "./dist/index.js",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"main": "./dist/index.mjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.mts",
 	"files": [
 		"dist"
 	],
 	"exports": {
 		".": {
-			"import": "./dist/index.js",
-			"require": "./dist/index.js",
-			"types": "./dist/index.d.ts"
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.mjs",
+			"types": "./dist/index.d.mts"
 		}
 	},
 	"scripts": {
